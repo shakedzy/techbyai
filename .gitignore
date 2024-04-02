@@ -1,0 +1,12 @@
+.DS_Store
+.venv*
+.vscode*
+*__pycache__*
+*.egg-info*
+
+build*
+dist*
+site*
+
+debug.py
+*.ipynb
