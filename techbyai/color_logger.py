@@ -62,3 +62,8 @@ class ColorLogger(logging.Logger):
 
 def get_logger(name: str| None = None, level: str | int | None = None):
     return ColorLogger(name or _DEFAULT_LOGGER_NAME, level=level or _DEFAULT_LOG_LEVEL)
+
+
+def set_default_log_level(level: str | int) -> None:
+    global _DEFAULT_LOG_LEVEL
+    _DEFAULT_LOG_LEVEL = level
