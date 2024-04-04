@@ -11,3 +11,8 @@ user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
 
 [search]
 past_days = 1
+
+[editorial]
+reporters = 4
+reporter_items = 5
+final_items = 7

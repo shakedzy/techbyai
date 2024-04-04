@@ -1,18 +1,21 @@
+import re
+import os
 import json
+import pathlib
 from time import time
+from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from random import randint, shuffle
 from textwrap import dedent
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
 from .assistant import Assistant
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
 from .utils import flatten
+from .settings import Settings
 
 
 class Routine:
-    NUM_OF_REPORTERS = 4
     TOPICS = dedent(
         """
         Foundation Models, AI Ethics and Bias, AI in Healthcare, Generative AI, AI in Creative Industries,
@@ -57,9 +60,9 @@ class Routine:
     def _hire_reporters(self) -> list[Assistant]:
         task = dedent(
             f"""
-            You must hire {self.NUM_OF_REPORTERS} reporters to research, choose and write the articles
+            You must hire {Settings().editorial.reporters} reporters to research, choose and write the articles
             for today's issue about the latest news and trends in tech and AI. 
-            Describe each of the {self.NUM_OF_REPORTERS} individuals you hire for this task.
+            Describe each of the {Settings().editorial.reporters} individuals you hire for this task.
             Your response should be a JSON, where the keys are the names of the reporters (which you generate),
             and the values are their characteristics description.
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
@@ -68,11 +71,11 @@ class Routine:
         self.cost += result['cost']
         self.logger.debug(result['response'])
         reporters = []
-        for name, description in list(json.loads(result['response']).items())[:self.NUM_OF_REPORTERS]:
+        for name, description in list(json.loads(result['response']).items())[:Settings().editorial.reporters]:
             reporters.append(Assistant(description, name=name))
         return reporters
     
-    def _research(self, items_per_reporter: int = 5) -> list[list[ItemSuggestion]]:
+    def _research(self) -> list[list[ItemSuggestion]]:
         editor_task = dedent(
             f"""
             Brief your staff about the type of news you'd like them to look for for today's issue.
@@ -87,7 +90,7 @@ class Routine:
             f"""
             IMPORTANT GUIDELINES:
             - Search the web and read webpages to complete your assignment. Make as many searches as required
-            - You must provide AT LEAST {items_per_reporter} items
+            - You must provide AT LEAST {Settings().editorial.reporter_items} items
             - Your response should be formatted as JSON, where the items titles (meaning: the titles of the 
               articles you read) are the keys, and the values are the items URLs.
               Example:
@@ -112,16 +115,16 @@ class Routine:
             suggestions.append(reporter_suggestions)
         return suggestions
     
-    def _select_items(self, suggestions: list[list[ItemSuggestion]], num_items: int = 7) -> list[list[ItemSuggestion]]:
+    def _select_items(self, suggestions: list[list[ItemSuggestion]]) -> list[list[ItemSuggestion]]:
         suggestions_text = '\n'.join([f'* {s.title} (URL: {s.url}) | Item ID: {s.id}' for s in flatten(suggestions)])
         task = dedent(
             f"""
             The list below contains the items suggestions provided by your staff:
             {suggestions_text}
-            Your task is to select the top {num_items} from this list to be featured in today's issue.
+            Your task is to select the top {Settings().editorial.final_items} from this list to be featured in today's issue.
             Note that as your reporters worked independently, some suggestions might be duplicates (either
-            same topic from different sources or even the exact same item). Make sure to select {num_items} DIFFERENT
-            items of different topics. Rank your selection from 1 to {num_items}, where 1 is the top item of today's issue.
+            same topic from different sources or even the exact same item). Make sure to select {Settings().editorial.final_items} DIFFERENT
+            items of different topics. Rank your selection from 1 to {Settings().editorial.final_items}, where 1 is the top item of today's issue.
             Return your selection as JSON, where the item ID is the key, and the value is another dictionary, holding
             your chosen rank and a list of similar item IDs to that item, if any. See the example below:
             ```json
@@ -132,6 +135,7 @@ class Routine:
                 }}
             }}
             ```
+            Never rank two items which are considered similar! Choose your favorite, list the rest under the `similar` list.
             """.strip())
         result = self.editor.do(task, as_json=True)
         self.cost += result['cost']
@@ -189,6 +193,32 @@ class Routine:
         elapsed_time = time() - self.start_time
         delta = timedelta(minutes=elapsed_time//60, seconds=elapsed_time%60)
         return str(delta)
+    
+    def _create_title_and_subtitle(self, full_article: str) -> dict[str, str]:
+        task = dedent(
+            f"""
+            The text below is the full article to be published today in your magazine:
+            ---
+            {full_article}
+            ---
+            Write a title and subtitle for it. Title should be up to 10 words, and subtitle up to 20 words.
+            Remember your magazine is a DAILY magazine, so make sure the title isn't about the whole month or year.
+            Also, make it sound professional, not amateur.
+            Return your response as JSON in the format below:
+            ```json
+            {{
+                "title": "YOUR TITLE",
+                "subtitle": "YOUR SUBTITLE
+            }}
+            ```
+            """.strip())
+        result = self.editor.do(task, as_json=True)
+        self.cost += result['cost']
+        return json.loads(result['response'])
+
+    @staticmethod
+    def _domain_of_url(url: str) -> str:
+        return urlparse(url).netloc
 
     def do(self) -> None:
         self.start_time = time()
@@ -212,15 +242,53 @@ class Routine:
         md_ranked_articles = []
         md_unranked_articles = []
         ranked_ids = [item.id for item in items if item.rank > 0]
+        ids_of_written = []
         for item in items:
+            if item.id in ids_of_written:
+                continue
+            
             if item.rank == -1: 
                     if item.id not in ranked_ids:
-                        md_unranked_articles.append(f'* [{item.title}]({item.url})')
+                        u = item.url.split("://")[-1]
+                        if u.endswith("/"): 
+                            u = u[:-1]
+                        if u != self._domain_of_url(item.url):
+                            md_unranked_articles.append(f'* [{item.title.replace(" | ", " ").replace("|", " ")}]({item.url})')
             else:
-                md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[link]({item.url})]\n\n{item.text}")
-        with open(f'{datetime.now().strftime("%Y-%m-%d")}-news.md', 'w') as f:
-            f.write('\n\n'.join(md_ranked_articles))
-            f.write('\n\n**Other headlines:**\n')
-            f.write('\n'.join(md_unranked_articles))
+                similar_items = []
+                for s_id in item.similar_ids:
+                    sim_list = [im for im in items if im.id == s_id]
+                    if len(sim_list) == 0:
+                        continue
+                    sim = sim_list[0]
+                    if self._domain_of_url(sim.url) == self._domain_of_url(item.url):
+                        continue
+                    similar_items.append(f'> * [{sim.title.replace(" | ", " ").replace("|", " ")}]({sim.url}) ({self._domain_of_url(sim.url)})')
+                    ids_of_written.append(sim.id)
+                if similar_items:
+                    similar_items = ["\n> **See also:**"] + similar_items
+                similar_text = '\n'.join(similar_items)
+                domain = self._domain_of_url(item.url)
+                md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{domain}]({item.url})]{similar_text}\n\n{item.text}")
+            ids_of_written.append(item.id)
+
+        self.logger.info("Creating title for article [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
+        full_article = '\n\n'.join(md_ranked_articles) + '\n\n**Other headlines:**\n' + '\n'.join(md_unranked_articles)
+        title_and_subtitle = self._create_title_and_subtitle(full_article)
+        title_and_subtitle['title'] = title_and_subtitle['title'] or f'AI News: {datetime.now().strftime("%A, %d %B, %Y")}'
+        title_and_subtitle['subtitle'] = title_and_subtitle['subtitle'] or "All the latest news about AI, brought to you by AI"
+
+        alphanumeric_title = re.sub(r'[^A-Za-z0-9 ]+', '', title_and_subtitle["title"])
+        filename = f'{datetime.now().strftime("%Y-%m-%d")}-{alphanumeric_title.lower().replace(" ","-")}.md'
+        top_directory = pathlib.Path(__file__).parent.parent.resolve()
+        filepath = os.path.join(top_directory, '_posts', filename)
+        with open(filepath, 'w') as f:
+            f.write(f'---\nlayout: post\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\ndate: {datetime.now().strftime("%Y-%m-%d")}\n---\n\n')
+            f.write(full_article + '\n\n')  
+            f.write(f'---\n### Technical details\nCreated at: {datetime.now().strftime("%d %B, %Y, %H:%M:%S")}, using `{Settings().llm.model}`.\n\nProcessing time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$\n')
+            f.write(f'<details>\n<summary>The Staff</summary>\n<div markdown="1">\nEditor: {self.editor.name}\n\n```\n{self.editor.definition}\n```\n\n')
+            f.write('\n\n'.join([f'{reporter.name}:\n\n```\n{reporter.definition}\n```' for reporter in self.reporters]))
+            f.write("\n</div>\n</details>\n")
+        
         self.logger.info(f"Done. [total elapsed time: {self._get_elapsed_time()}, total cost: {round(self.cost, 2)}$]", color='green')
         

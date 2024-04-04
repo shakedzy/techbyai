@@ -1,0 +1,12 @@
+{
+    "items": [
+        {
+            "name": "About",
+            "link": "/about/"
+        },
+        {
+            "name": "shakedzy.xyz",
+            "link": "https://shakedzy.xyz"
+        }
+    ]
+}
