@@ -1,8 +1,11 @@
+import io
 import re
 import os
 import json
 import pathlib
 from time import time
+from openai import OpenAI
+from pydub import AudioSegment
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from random import randint, shuffle
@@ -30,6 +33,7 @@ class Routine:
         self.logger = get_logger()
         self.start_time = time()
         self.cost = 0.
+        self.top_directory = pathlib.Path(__file__).parent.parent.resolve()
 
     def _hire_editor(self) -> Assistant:
         assistant = Assistant(definition="You are a creative AI assistant", name='')
@@ -215,6 +219,30 @@ class Routine:
         result = self.editor.do(task, as_json=True)
         self.cost += result['cost']
         return json.loads(result['response'])
+    
+    def _narrate(self, items: list[ItemSuggestion], filepath: str) -> None:
+        client = OpenAI()
+
+        def narrate_single_article(item: ItemSuggestion) -> AudioSegment:
+            response = client.audio.speech.create(
+                model=Settings().tts.model,
+                voice=Settings().tts.voice,
+                input=f"Article {item.rank} - {item.title}\nFrom: {self._domain_of_url(item.url)}\n\n{item.text}"
+            )
+            audio_data = io.BytesIO(response.content) 
+            audio_segment = AudioSegment.silent(duration=1000) + AudioSegment.from_file(audio_data, format="mp3")
+            return audio_segment
+        
+        ranked_items = [item for item in items if item.rank > 0]
+        ranked_items = sorted(ranked_items, key=lambda s: s.rank)
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(narrate_single_article, item) for item in ranked_items]
+        segments = [f.result() for f in futures]
+        self.cost += Settings().tts.cost_per_mill * sum([len(item.text) for item in ranked_items]) / 1e6
+        output_audio = AudioSegment.empty()
+        for segment in segments:
+            output_audio += segment
+        output_audio.export(filepath, format="mp3")
 
     @staticmethod
     def _domain_of_url(url: str) -> str:
@@ -248,12 +276,12 @@ class Routine:
                 continue
             
             if item.rank == -1: 
-                    if item.id not in ranked_ids:
-                        u = item.url.split("://")[-1]
-                        if u.endswith("/"): 
-                            u = u[:-1]
-                        if u != self._domain_of_url(item.url):
-                            md_unranked_articles.append(f'* [{item.title.replace(" | ", " ").replace("|", " ")}]({item.url})')
+                if item.id not in ranked_ids:
+                    u = item.url.split("://")[-1]
+                    if u.endswith("/"): 
+                        u = u[:-1]
+                    if u != self._domain_of_url(item.url):
+                        md_unranked_articles.append(f'* [{item.title.replace(" | ", " ").replace("|", " ")}]({item.url})')
             else:
                 similar_items = []
                 for s_id in item.similar_ids:
@@ -279,11 +307,15 @@ class Routine:
         title_and_subtitle['subtitle'] = title_and_subtitle['subtitle'] or "All the latest news about AI, brought to you by AI"
 
         alphanumeric_title = re.sub(r'[^A-Za-z0-9 ]+', '', title_and_subtitle["title"])
-        filename = f'{datetime.now().strftime("%Y-%m-%d")}-{alphanumeric_title.lower().replace(" ","-")}.md'
-        top_directory = pathlib.Path(__file__).parent.parent.resolve()
-        filepath = os.path.join(top_directory, '_posts', filename)
+        filename = f'{datetime.now().strftime("%Y-%m-%d")}-{alphanumeric_title.lower().replace(" ","-")}'
+
+        self.logger.info(f"Narrating [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
+        recording_filepath = os.path.join(self.top_directory, 'audio', filename+'.mp3')
+        self._narrate(items, recording_filepath)
+
+        filepath = os.path.join(self.top_directory, '_posts', filename+'.md')
         with open(filepath, 'w') as f:
-            f.write(f'---\nlayout: post\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\ndate: {datetime.now().strftime("%Y-%m-%d")}\n---\n\n')
+            f.write(f'---\nlayout: post\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\naudio: {filename}.mp3\ndate: {datetime.now().strftime("%Y-%m-%d")}\n---\n\n')
             f.write(full_article + '\n\n')  
             f.write(f'---\n### Technical details\nCreated at: {datetime.now().strftime("%d %B, %Y, %H:%M:%S")}, using `{Settings().llm.model}`.\n\nProcessing time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$\n')
             f.write(f'<details>\n<summary>The Staff</summary>\n<div markdown="1">\nEditor: {self.editor.name}\n\n```\n{self.editor.definition}\n```\n\n')

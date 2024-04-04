@@ -5,6 +5,11 @@ temperature = 0.5
 input_costs_per_mill = 10   # dollars
 output_costs_per_mill = 30  # dollars
 
+[tts]
+model = "tts-1"
+voice = "shimmer"
+cost_per_mill = 15 # dollars
+
 [web]
 surf_timeout_seconds = 15
 user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
