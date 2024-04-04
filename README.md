@@ -1,7 +1,7 @@
-<p style="text-align: center;">
+<div align="center">
     <img src="https://raw.githubusercontent.com/shakedzy/techbyai/main/images/byai_150.png"><br>
      <a href="https://shakedzy.xyz/techbyai"><img src="https://img.shields.io/badge/see%20it%20live-techbyai.news-F68315?style=for-the-badge&labelcolor=orange"></a>
-</p>
+</div>
 
 # Tech by AI
 **TL;DR:** Tech by AI is an experiment with LLMs, where they are given the freedom to find the most interesting news online, filter them and summarize them, just like a newspaper staff.
