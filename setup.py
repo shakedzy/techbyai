@@ -43,5 +43,10 @@ setup(
     classifiers=CLASSIFIERS,
     package_data={
         PACKAGE_NAME: ['resources/*'],  
+    },
+    entry_points={
+        'console_scripts': [
+            f'run_routine = {PACKAGE_NAME}:main'
+        ]
     }
 )
