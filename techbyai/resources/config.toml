@@ -1,6 +1,6 @@
 [llm]
 model = "gpt-4-turbo-preview"
-temperature = 0.3
+temperature = 0.5
 # Costs info: https://openai.com/pricing#language-models
 input_costs_per_mill = 10   # dollars
 output_costs_per_mill = 30  # dollars

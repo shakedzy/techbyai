@@ -5,6 +5,6 @@ from .utils import path_to_resource
 
 
 def main():
-    set_default_log_level("DEBUG")
+    set_default_log_level("INFO")
     init_settings([path_to_resource("config.toml")])
     Routine().do()

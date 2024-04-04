@@ -1,11 +1,12 @@
 import json
 from time import time
 from datetime import datetime, timedelta
-from random import randint
+from random import randint, shuffle
 from textwrap import dedent
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 from .assistant import Assistant
+from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
 from .utils import flatten
 
@@ -50,6 +51,7 @@ class Routine:
         possible_editors = [{'name': k, 'definition': v} for k,v in json.loads(result['response']).items()]
         self.logger.debug(possible_editors)
         selected_editor = possible_editors[randint(0,3)]
+        self.logger.debug(f"Selected editor: {selected_editor['name']} - {selected_editor['definition']}")
         return Assistant(definition=selected_editor['definition'], name=selected_editor['name'])
     
     def _hire_reporters(self) -> list[Assistant]:
@@ -70,7 +72,7 @@ class Routine:
             reporters.append(Assistant(description, name=name))
         return reporters
     
-    def _research(self, items_per_reporter: int = 5) -> list[dict[str, str]]:
+    def _research(self, items_per_reporter: int = 5) -> list[list[ItemSuggestion]]:
         editor_task = dedent(
             f"""
             Brief your staff about the type of news you'd like them to look for for today's issue.
@@ -92,6 +94,8 @@ class Routine:
             ```json
             {{"OpenAI's Sora text-to-video generator will be publicly available later this year": "https://www.theverge.com/2024/3/13/24099402/openai-text-to-video-ai-sora-public-availability"}}
             ```
+            REMEMBER: You are competing with the rest of the staff on finding the most interesting items, so be
+            creative in your searches, don't just copy paste the editor's instructions!
             """.strip())
         reporters_task = editor_response['response'] + '\n' + guidelines
         self.logger.debug(reporters_task)
@@ -100,11 +104,16 @@ class Routine:
         results = [f.result() for f in futures]
         self.cost += sum([r['cost'] for r in results])
         self.logger.debug([r['response'] for r in results])
-        return [json.loads(r['response']) for r in results]
+        suggestions: list[list[ItemSuggestion]] = []
+        for i, reporter_suggestions_dict in enumerate([json.loads(r['response']) for r in results]):
+            reporter_suggestions: list[ItemSuggestion] = []
+            for title, url in reporter_suggestions_dict.items():
+                reporter_suggestions.append(ItemSuggestion(title=title, url=url, reporter=self.reporters[i].name))
+            suggestions.append(reporter_suggestions)
+        return suggestions
     
-    def _select_items(self, suggestions: list[dict[str, str]], num_items: int = 7) -> dict[str, dict[str, Any]]:
-        _l = flatten([[{'title': k, 'url': v} for k,v in s.items()] for s in suggestions])
-        suggestions_text = '\n'.join([f'* {d["title"]} | URL: {d["url"]}' for d in _l])
+    def _select_items(self, suggestions: list[list[ItemSuggestion]], num_items: int = 7) -> list[list[ItemSuggestion]]:
+        suggestions_text = '\n'.join([f'* {s.title} (URL: {s.url}) | Item ID: {s.id}' for s in flatten(suggestions)])
         task = dedent(
             f"""
             The list below contains the items suggestions provided by your staff:
@@ -113,13 +122,13 @@ class Routine:
             Note that as your reporters worked independently, some suggestions might be duplicates (either
             same topic from different sources or even the exact same item). Make sure to select {num_items} DIFFERENT
             items of different topics. Rank your selection from 1 to {num_items}, where 1 is the top item of today's issue.
-            Return your selection as JSON, where the item title is the key, and the value is another dictionary, holding
-            your chosen rank and a list of similar items to that item, if any. See the example below:
+            Return your selection as JSON, where the item ID is the key, and the value is another dictionary, holding
+            your chosen rank and a list of similar item IDs to that item, if any. See the example below:
             ```json
-            {{"ITEM_TITLE": 
+            {{"ITEM_ID": 
                 {{
                     "rank": int_value,
-                    "similar": ["TITLE_OF_SIMILAR_ITEMS", ...]  // keep empty if none
+                    "similar": ["ID_OF_SIMILAR_ITEMS", ...]  // keep empty if none
                 }}
             }}
             ```
@@ -127,12 +136,24 @@ class Routine:
         result = self.editor.do(task, as_json=True)
         self.cost += result['cost']
         self.logger.debug(result['response'])
-        return json.loads(result['response'])
+        ranking = json.loads(result['response'])
+        for s_id, dct in ranking.items():
+            indices = list(range(len(suggestions)))
+            shuffle(indices)
+            for i in indices:
+                reporter_suggestions = suggestions[i]
+                reporter_s_ids = [sg.id for sg in reporter_suggestions]
+                if s_id in reporter_s_ids:
+                    idx = reporter_s_ids.index(s_id)
+                    suggestion = reporter_suggestions[idx]
+                    suggestion.rank = int(dct['rank'])
+                    suggestion.similar_ids = dct.get('similar', [])
+                    reporter_suggestions[idx] = suggestion
+                    break
+        return suggestions
     
-    def _write_items(self, items: list[list[dict[str, str]]]) -> dict[str, str]:
-        # Each input item is {'title': title, 'url': url}
+    def _write_items(self, items: list[list[ItemSuggestion]]) -> list[list[ItemSuggestion]]:
         error_message = "<ERROR>"
-        articles: dict[str, str] = {}
         task = dedent(
             """
             Write a summary for toady's issue on {title} (URL: {url}). 
@@ -140,22 +161,29 @@ class Routine:
             - It should be no more than 200 words
             - Do NOT add a title, the editor will add it later
             - Your response is printed as it is, so do not add any other remarks beside the summary
+            - Use Markdown syntax
 
             IMPORTANT: If you encounter an error or an issue completing this task, simple respond with "{error}".
             """)
         
-        def reporter_tasks(reporter: Assistant, reporter_items: list[dict[str, str]]):  
-            for item in reporter_items:
-                result = reporter.do(task.format(title=item['title'], url=item['url'], error=error_message))
+        def reporter_tasks(reporter: Assistant, reporter_items: list[ItemSuggestion]) -> list[ItemSuggestion]:  
+            for i, item in enumerate(reporter_items):
+                if item.rank < 0:
+                    continue
+                result = reporter.do(task.format(title=item.title, url=item.url, error=error_message))
                 self.cost += result['cost']
                 if not error_message in result['response']:
-                    articles[item['title']] = result['response']
+                    item.text = result['response']
+                else:
+                    item.rank = -1
+                reporter_items[i] = item
+            return reporter_items
         
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(reporter_tasks, reporter, reporter_items) for reporter, reporter_items in zip(self.reporters, items)]
-        [f.result() for f in futures]
-        self.logger.debug(articles)
-        return articles
+        items_with_text = [f.result() for f in futures]
+        self.logger.debug('\n\n'.join(s.text for s in flatten(items_with_text) if s.text))
+        return items_with_text
 
     def _get_elapsed_time(self) -> str:
         elapsed_time = time() - self.start_time
@@ -173,25 +201,26 @@ class Routine:
         self.reporters = self._hire_reporters()
         
         self.logger.info(f"Performing research [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
-        suggestions = self._research()  # index of list is the index of reporter, dicts are {title: url}
+        suggestions = self._research() 
 
         self.logger.info(f"Selecting top items [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
-        selected_items = self._select_items(suggestions) # dict {title: {rank: i, similar: []}}
-        items_for_reporters: list[list[dict[str, str]]] = [[] for x in [None] * self.NUM_OF_REPORTERS if x is None]
-        for title in selected_items.keys():
-            reporter_index = next((suggestions.index(s) for s in suggestions if title in s.keys()), -1)
-            url = suggestions[reporter_index][title]
-            items_for_reporters[reporter_index].append({'title': title, 'url': url})
+        suggestions = self._select_items(suggestions) 
         
         self.logger.info(f"Writing articles [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
-        articles_dict = self._write_items(items_for_reporters)
-        articles = [(title, text) for title, text in articles_dict.items()]
-        articles = sorted(articles, key=lambda tup: selected_items[tup[0]]['rank'])
-        md_articles = []
-        for title, text in articles:
-            reporter_index = next((suggestions.index(s) for s in suggestions if title in s.keys()), -1)
-            md_articles.append(f"# {title}\n_By: {self.reporters[reporter_index].name}_ [[link]({suggestions[reporter_index][title]})]\n\n{text}")
+        items = flatten(self._write_items(suggestions))
+        items = sorted(items, key=lambda s: s.rank if s.rank > 0 else 999)
+        md_ranked_articles = []
+        md_unranked_articles = []
+        ranked_ids = [item.id for item in items if item.rank > 0]
+        for item in items:
+            if item.rank == -1: 
+                    if item.id not in ranked_ids:
+                        md_unranked_articles.append(f'* [{item.title}]({item.url})')
+            else:
+                md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[link]({item.url})]\n\n{item.text}")
         with open(f'{datetime.now().strftime("%Y-%m-%d")}-news.md', 'w') as f:
-            f.write('\n\n'.join(md_articles))
+            f.write('\n\n'.join(md_ranked_articles))
+            f.write('\n\n**Other headlines:**\n')
+            f.write('\n'.join(md_unranked_articles))
         self.logger.info(f"Done. [total elapsed time: {self._get_elapsed_time()}, total cost: {round(self.cost, 2)}$]", color='green')
         
