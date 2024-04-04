@@ -1,0 +1,38 @@
+name: Install, Run Script, and Commit Changes
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron:  '0 3 * * *'  
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: main
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .  
+    
+    - name: Run 
+      run: run_routine
+    
+    - name: Commit Changes
+      run: |
+        git config --global user.name 'Your Name'
+        git config --global user.email ${{ secrets.EMAIL_ADDRESS }}
+        git add .
+        git commit -m "Automated update: $CURRENT_TIME" || echo "No changes to commit"
+        git push
