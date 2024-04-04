@@ -272,7 +272,7 @@ class Routine:
                 md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{domain}]({item.url})]{similar_text}\n\n{item.text}")
             ids_of_written.append(item.id)
 
-        self.logger.info("Creating title for article [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
+        self.logger.info(f"Creating title for article [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
         full_article = '\n\n'.join(md_ranked_articles) + '\n\n**Other headlines:**\n' + '\n'.join(md_unranked_articles)
         title_and_subtitle = self._create_title_and_subtitle(full_article)
         title_and_subtitle['title'] = title_and_subtitle['title'] or f'AI News: {datetime.now().strftime("%A, %d %B, %Y")}'
