@@ -1,9 +1,6 @@
 name: Install, Run Script, and Commit Changes
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron:  '0 3 * * *'  
 
