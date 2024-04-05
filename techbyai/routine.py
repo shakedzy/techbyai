@@ -123,7 +123,7 @@ class Routine:
             f"""
             The list below contains the items suggestions provided by your staff:
             {suggestions_text}
-            Your task is to select the top {Settings().editorial.final_items} from this list to be featured in today's issue.
+            Your task is to select the top {Settings().editorial.final_items} (or less) from this list to be featured in today's issue.
             Note that as your reporters worked independently, some suggestions might be duplicates (either
             same topic from different sources or even the exact same item). Make sure to select {Settings().editorial.final_items} DIFFERENT
             items of different topics. Rank your selection from 1 to {Settings().editorial.final_items}, where 1 is the top item of today's issue.
@@ -137,7 +137,10 @@ class Routine:
                 }}
             }}
             ```
-            Never rank two items which are considered similar! Choose your favorite, list the rest under the `similar` list.
+            Guidelines:
+            - Never rank two items which are considered similar! Choose your favorite, list the rest under the `similar` list.
+            - REFRAIN from having promotional content on your magazine. 
+              If you're using content shared by the same company or person who created it, make sure it actually professionally valuable, and simply self-endorsing
             REMEMBER: You are being assessed by the quality of the content of your magazine, make sure to make it as 
             interesting and professional as possible!
             """.strip())
