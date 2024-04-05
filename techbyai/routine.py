@@ -237,7 +237,7 @@ class Routine:
             now = datetime.now()
             date_str = f"{now.strftime('%B')} {ordinal_number(now.day)}, {now.year}"
             speech_input = f"Tech by AI: {date_str} - {title}"
-            self.cost = Settings().tts.cost_per_mill * len(speech_input) / 1e6
+            self.cost += Settings().tts.cost_per_mill * len(speech_input) / 1e6
             response = client.audio.speech.create(
                 model=Settings().tts.model,
                 voice=Settings().tts.voice,
