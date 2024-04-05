@@ -19,14 +19,6 @@ from .settings import Settings
 
 
 class Routine:
-    TOPICS = dedent(
-        """
-        Foundation Models, AI Ethics and Bias, AI in Healthcare, Generative AI, AI in Creative Industries,
-        AI Regulation and Policy, AI and Cybersecurity, AI in Education, AI and Climate Change, AI in Robotics,
-        AI in Gaming, Promising startups in Generative AI, Distinguished companies (like OpenAI, Anthropic, Mistral, 
-        Google, Cohere, Microsoft, Amazon, Midjourney, Stability, etc.)
-        """.strip())
-
     def __init__(self) -> None:
         self.editor: Assistant
         self.reporters: list[Assistant] = []
@@ -35,21 +27,27 @@ class Routine:
         self.cost = 0.
         self.top_directory = pathlib.Path(__file__).parent.parent.resolve()
 
+    @property
+    def topics(self) -> str:
+        topics_list = Settings().editorial.topics
+        shuffle(topics_list)
+        return ", ".join(topics_list)
+
     def _hire_editor(self) -> Assistant:
         assistant = Assistant(definition="You are a creative AI assistant", name='')
         task = dedent(
-            """
-            I need to hire an Editor-in-Chief for a daily tech magazine. Think of 4 different types
+            f"""
+            I need to hire an Editor-in-Chief for a daily {Settings().editorial.subject} magazine. Think of 4 different types
             of editors and describe their characteristics.
             Your response should be a JSON, where the keys are the names of the editors (which you generate),
             and the values are their characteristics description.
             Follow this schema:
             ```json
-            {"FULL NAME": "DESCRIPTION", ...}
+            {{"FULL NAME": "DESCRIPTION", ...}}
             ```
             For example:
             ```json
-            {"John Smith": "You are a ..."}
+            {{"John Smith": "You are a ..."}}
             ```
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
             """.strip())
@@ -65,7 +63,7 @@ class Routine:
         task = dedent(
             f"""
             You must hire {Settings().editorial.reporters} reporters to research, choose and write the articles
-            for today's issue about the latest news and trends in tech and AI. 
+            for today's issue about the latest news and trends in {Settings().editorial.subject}. 
             Describe each of the {Settings().editorial.reporters} individuals you hire for this task.
             Your response should be a JSON, where the keys are the names of the reporters (which you generate),
             and the values are their characteristics description.
@@ -84,7 +82,7 @@ class Routine:
             f"""
             Brief your staff about the type of news you'd like them to look for for today's issue.
             Explain to them what you're expecting of them. Here are some example topics:
-            {self.TOPICS}
+            {self.topics}
             Feel free to edit, add or remove topics as you wish. You may also look on the web for new ideas.
             Reply as if you speak to your reporters directly.
             """)
@@ -140,6 +138,8 @@ class Routine:
             }}
             ```
             Never rank two items which are considered similar! Choose your favorite, list the rest under the `similar` list.
+            REMEMBER: You are being assessed by the quality of the content of your magazine, make sure to make it as 
+            interesting and professional as possible!
             """.strip())
         result = self.editor.do(task, as_json=True)
         self.cost += result['cost']
@@ -236,7 +236,7 @@ class Routine:
         def narrate_title(title: str) -> AudioSegment:
             now = datetime.now()
             date_str = f"{now.strftime('%B')} {ordinal_number(now.day)}, {now.year}"
-            speech_input = f"Tech by AI: {date_str} - {title}"
+            speech_input = f"{Settings().editorial.name}: {date_str} - {title}"
             self.cost += Settings().tts.cost_per_mill * len(speech_input) / 1e6
             response = client.audio.speech.create(
                 model=Settings().tts.model,
