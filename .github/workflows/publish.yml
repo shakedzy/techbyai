@@ -1,4 +1,4 @@
-name: Install, Run Script, and Commit Changes
+name: Daily Publication
 
 on:
   schedule:
