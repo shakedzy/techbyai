@@ -16,12 +16,13 @@ jobs:
         ref: main 
     
     - name: Run 
-      run: touch audio/test.txt
+      run: touch audio/test2.txt
     
     - name: Commit Changes
       run: |
         git config --global user.name ${{ secrets.USERNAME }}
         git config --global user.email ${{ secrets.EMAIL_ADDRESS }}
         git add .
+        CURRENT_TIME=$(date +'%Y-%m-%d %H:%M:%S')
         git commit -m "Test commit from actions: $CURRENT_TIME" || echo "No changes to commit"
         git push
