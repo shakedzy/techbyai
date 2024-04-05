@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .assistant import Assistant
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
-from .utils import flatten
+from .utils import flatten, ordinal_number
 from .settings import Settings
 
 
@@ -220,7 +220,7 @@ class Routine:
         self.cost += result['cost']
         return json.loads(result['response'])
     
-    def _narrate(self, items: list[ItemSuggestion], filepath: str) -> None:
+    def _narrate(self, items: list[ItemSuggestion], title: str, filepath: str) -> None:
         client = OpenAI()
 
         def narrate_single_article(item: ItemSuggestion) -> AudioSegment:
@@ -233,13 +233,30 @@ class Routine:
             audio_segment = AudioSegment.silent(duration=1000) + AudioSegment.from_file(audio_data, format="mp3")
             return audio_segment
         
+        def narrate_title(title: str) -> AudioSegment:
+            now = datetime.now()
+            date_str = f"{now.strftime('%B')} {ordinal_number(now.day)}, {now.year}"
+            speech_input = f"Tech by AI: {date_str} - {title}"
+            self.cost = Settings().tts.cost_per_mill * len(speech_input) / 1e6
+            response = client.audio.speech.create(
+                model=Settings().tts.model,
+                voice=Settings().tts.voice,
+                input=speech_input
+            )
+            audio_data = io.BytesIO(response.content) 
+            audio_segment = AudioSegment.silent(duration=1000) + AudioSegment.from_file(audio_data, format="mp3")
+            return audio_segment
+        
         ranked_items = [item for item in items if item.rank > 0]
         ranked_items = sorted(ranked_items, key=lambda s: s.rank)
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(narrate_single_article, item) for item in ranked_items]
+            title_future = executor.submit(narrate_title, title)
         segments = [f.result() for f in futures]
+        title_segment = title_future.result()
         self.cost += Settings().tts.cost_per_mill * sum([len(item.text) for item in ranked_items]) / 1e6
         output_audio = AudioSegment.empty()
+        output_audio += title_segment
         for segment in segments:
             output_audio += segment
         output_audio.export(filepath, format="mp3")
@@ -311,7 +328,7 @@ class Routine:
 
         self.logger.info(f"Narrating [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
         recording_filepath = os.path.join(self.top_directory, 'audio', filename+'.mp3')
-        self._narrate(items, recording_filepath)
+        self._narrate(items, title=title_and_subtitle['title'], filepath=recording_filepath)
 
         filepath = os.path.join(self.top_directory, '_posts', filename+'.md')
         with open(filepath, 'w') as f:
