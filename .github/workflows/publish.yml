@@ -21,6 +21,8 @@ jobs:
         
     - name: Install Dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install ffmpeg libavcodec-extra
         python -m pip install --upgrade pip
         pip install -e .  
     
@@ -33,7 +35,7 @@ jobs:
     
     - name: Commit Changes
       run: |
-        git config --global user.name 'Shaked Zychlinski'
+        git config --global user.name ${{ secrets.USERNAME }}
         git config --global user.email ${{ secrets.EMAIL_ADDRESS }}
         git add .
         git commit -m "Automated update: $CURRENT_TIME" || echo "No changes to commit"
