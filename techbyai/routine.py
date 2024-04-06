@@ -93,6 +93,7 @@ class Routine:
             IMPORTANT GUIDELINES:
             - Search the web and read webpages to complete your assignment. Make as many searches as required
             - You must provide AT LEAST {Settings().editorial.reporter_items} items
+            - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             - Your response should be formatted as JSON, where the items titles (meaning: the titles of the 
               articles you read) are the keys, and the values are the items URLs.
               Example:
@@ -141,6 +142,7 @@ class Routine:
             - Never rank two items which are considered similar! Choose your favorite, list the rest under the `similar` list.
             - REFRAIN from having promotional content on your magazine. 
               If you're using content shared by the same company or person who created it, make sure it actually professionally valuable, and simply self-endorsing
+            - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             REMEMBER: You are being assessed by the quality of the content of your magazine, make sure to make it as 
             interesting and professional as possible!
             """.strip())
