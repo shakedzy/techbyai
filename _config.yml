@@ -2,15 +2,8 @@
 name: Tech by AI
 email: shakedzy@gmail.com
 url: https://shakedzy.xyz/techbyai
-description: Tech new summarized by AI
+description: Daily tech news about AI, summarized by AI
 author: Shaked Zychlinski
 title: Tech by AI
 permalink: pretty
-baseurl: /techbyai
-
-# social
-github:
-  username: shakedzy
-
-twitter:
-  username: shakedzy
+baseurl: ""

@@ -4,6 +4,8 @@ title: "AI's Transformative Leap: Today's Highlights"
 subtitle: "From generative models to ethical challenges, AI reshapes industries."
 audio: 2024-04-04-ais-transformative-leap-todays-highlights.mp3
 date: 2024-04-04
+duration: "09:38"
+bytes: 2313644
 ---
 
 # Stability AI's Latest Advancements in Foundation Models

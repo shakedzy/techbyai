@@ -22,6 +22,7 @@ name = "Tech by AI"
 reporters = 4
 reporter_items = 5
 final_items = 7
+max_words_per_item = 150
 subject = "tech and AI"
 topics = [
         "Foundation Models", 
@@ -29,11 +30,11 @@ topics = [
         "Uses of Generative AI", 
         "AI Regulation and Policy", 
         "AI and Cybersecurity", 
-        "AI in Education", 
         "AI in Robotics",
         "Promising startups in Generative AI", 
         "Distinguished companies (like OpenAI, Anthropic, Mistral, Google, Cohere, Microsoft, Amazon, Midjourney, Stability, etc.)",
         "Hardware for AI",
-        "New capabilities and breakthoughs in AI",
+        "New Generative AI models",
+        "Cutting-edge capabilities and breakthoughs in AI",
         "New AI-related researches"
         ]

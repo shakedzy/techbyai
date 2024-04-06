@@ -4,6 +4,8 @@ title: "AI's 2024 Milestone: Innovation and Ethical Challenges"
 subtitle: "Exploring the latest trends, startups, and ethical considerations in AI"
 audio: 2024-04-05-ais-2024-milestone-innovation-and-ethical-challenges.mp3
 date: 2024-04-05
+duration: "11:27"
+bytes: 2750636
 ---
 
 # The AI Landscape in 2024: Trends and Top Startups

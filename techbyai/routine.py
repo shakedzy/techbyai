@@ -169,7 +169,7 @@ class Routine:
             """
             Write a summary for toady's issue on {title} (URL: {url}). 
             Follow these guidelines:
-            - It should be no more than 200 words
+            - It should be no more than {max_words} words
             - Do NOT add a title, the editor will add it later
             - Your response is printed as it is, so do not add any other remarks beside the summary
             - Use Markdown syntax
@@ -181,7 +181,11 @@ class Routine:
             for i, item in enumerate(reporter_items):
                 if item.rank < 0:
                     continue
-                result = reporter.do(task.format(title=item.title, url=item.url, error=error_message))
+                result = reporter.do(task.format(
+                    title=item.title, 
+                    url=item.url, 
+                    max_words=Settings().editorial.max_words_per_item,
+                    error=error_message))
                 self.cost += result['cost']
                 if not error_message in result['response']:
                     item.text = result['response']
@@ -223,7 +227,7 @@ class Routine:
         self.cost += result['cost']
         return json.loads(result['response'])
     
-    def _narrate(self, items: list[ItemSuggestion], title: str, filepath: str) -> None:
+    def _narrate(self, items: list[ItemSuggestion], title: str, filepath: str) -> int:
         client = OpenAI()
 
         def narrate_single_article(item: ItemSuggestion) -> AudioSegment:
@@ -262,12 +266,14 @@ class Routine:
         output_audio += title_segment
         for segment in segments:
             output_audio += segment
+        length_seconds = int(len(output_audio) / 1000)
         output_audio.export(filepath, format="mp3")
+        return length_seconds
 
     @staticmethod
     def _domain_of_url(url: str) -> str:
         return urlparse(url).netloc
-
+    
     def do(self) -> None:
         self.start_time = time()
         self.cost = 0.
@@ -331,11 +337,13 @@ class Routine:
 
         self.logger.info(f"Narrating [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
         recording_filepath = os.path.join(self.top_directory, 'audio', filename+'.mp3')
-        self._narrate(items, title=title_and_subtitle['title'], filepath=recording_filepath)
+        length_seconds = self._narrate(items, title=title_and_subtitle['title'], filepath=recording_filepath)
+        minutes, seconds = divmod(length_seconds, 60)
+        duration_str = "{:02d}:{:02d}".format(int(minutes), int(seconds))
 
         filepath = os.path.join(self.top_directory, '_posts', filename+'.md')
         with open(filepath, 'w') as f:
-            f.write(f'---\nlayout: post\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\naudio: {filename}.mp3\ndate: {datetime.now().strftime("%Y-%m-%d")}\n---\n\n')
+            f.write(f'---\nlayout: post\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\naudio: {filename}.mp3\ndate: {datetime.now().strftime("%Y-%m-%d")}\nduration: "{duration_str}"\nbytes: {os.path.getsize(recording_filepath)}\n---\n\n')
             f.write(full_article + '\n\n')  
             f.write(f'---\n### Technical details\nCreated at: {datetime.now().strftime("%d %B, %Y, %H:%M:%S")}, using `{Settings().llm.model}`.\n\nProcessing time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$\n')
             f.write(f'<details>\n<summary>The Staff</summary>\n<div markdown="1">\nEditor: {self.editor.name}\n\n```\n{self.editor.definition}\n```\n\n')
