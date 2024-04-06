@@ -4,6 +4,8 @@ title: "AI's Transformative Leap: Today's Global Impact"
 subtitle: "From Europe's Strategy to IKEA's Innovation, AI Redefines Boundaries"
 audio: 2024-04-06-ais-transformative-leap-todays-global-impact.mp3
 date: 2024-04-06
+duration: "11:17"
+bytes: 2708589
 ---
 
 # European approach to artificial intelligence | Shaping Europe's ...
