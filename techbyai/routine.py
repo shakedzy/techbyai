@@ -232,11 +232,11 @@ class Routine:
     def _narrate(self, items: list[ItemSuggestion], title: str, filepath: str) -> int:
         client = OpenAI()
 
-        def narrate_single_article(item: ItemSuggestion) -> AudioSegment:
+        def narrate_single_article(item: ItemSuggestion, idx: int) -> AudioSegment:
             response = client.audio.speech.create(
                 model=Settings().tts.model,
                 voice=Settings().tts.voice,
-                input=f"Article {item.rank} - {item.title}\nFrom: {self._domain_of_url(item.url)}\n\n{item.text}"
+                input=f"Article {idx} - {item.title}\nFrom: {self._domain_of_url(item.url)}\n\n{item.text}"
             )
             audio_data = io.BytesIO(response.content) 
             audio_segment = AudioSegment.silent(duration=1000) + AudioSegment.from_file(audio_data, format="mp3")
@@ -259,7 +259,7 @@ class Routine:
         ranked_items = [item for item in items if item.rank > 0]
         ranked_items = sorted(ranked_items, key=lambda s: s.rank)
         with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(narrate_single_article, item) for item in ranked_items]
+            futures = [executor.submit(narrate_single_article, item, idx) for idx, item in enumerate(ranked_items, start=1)]
             title_future = executor.submit(narrate_title, title)
         segments = [f.result() for f in futures]
         title_segment = title_future.result()
