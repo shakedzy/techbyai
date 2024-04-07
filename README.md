@@ -15,8 +15,8 @@ and summarize the important news for me. Everything is done automatically, witho
 
 
 The daily news briefing is made by AI-generated editor and AI-generated reporters, which receive broad guidelines
-and freedom to act according to their generated characteristics. They interact with one another, and compile the 
-news by themselves.
+and freedom to act according to their generated characteristics. They interact with one another, select and compile the 
+news by themselves, with no human intervention what-so-ever.
 
 
 As the content is completely AI-generated, it should be treated as such. Take everything with a grain of salt, double-check 
