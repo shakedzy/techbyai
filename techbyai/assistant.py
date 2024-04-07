@@ -71,9 +71,13 @@ class Assistant:
             if assistant_message.tool_calls:
                 for tool_call in assistant_message.tool_calls:
                     tool_name = tool_call.function.name
-                    arguments = json.loads(tool_call.function.arguments)
-                    self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
-                    tool_result = self.callables[tool_name](**arguments)
+                    if tool_name == "multi_tool_use.parallel":
+                        # This is a tool hallucination by GPT, it does not exist
+                        tool_result = "There's no such tool names `multi_tool_use.parallel`, use the correct syntax to call multiple tools!"
+                    else:
+                        arguments = json.loads(tool_call.function.arguments)
+                        self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
+                        tool_result = self.callables[tool_name](**arguments)
                     messages.append({
                         "tool_call_id": tool_call.id,
                         "role": "tool",

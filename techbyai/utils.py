@@ -1,4 +1,7 @@
+
+import re
 import pkg_resources
+from pypdf import PdfReader
 from typing import TypeVar
 
 T = TypeVar('T')
@@ -21,3 +24,18 @@ def ordinal_number(num: int) -> str:
         # the second parameter is a default.
         suffix = suffixes.get(num % 10, 'th')
     return str(num) + suffix
+
+
+def read_pdf(file_path: str) -> str:
+    def remove_page_numbers(text: str):
+        # Pattern: newline, one or more digits, newline
+        pattern = r'^(?:\d+\n)|(\n\d+\n)|(\n\d+$)|^\d+$'
+        return re.sub(pattern, '\n', text) 
+         
+    pdf = PdfReader(file_path)
+    texts: list[str] = list()
+    for page in pdf.pages:
+        text = page.extract_text(0)
+        text = remove_page_numbers(text)
+        texts.append(text)
+    return " ".join(texts)

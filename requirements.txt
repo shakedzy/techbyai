@@ -1,7 +1,9 @@
+arxiv~=2.1.0
 beautifulsoup4~=4.12.3
 dynaconf~=3.2.5
 google-api-python-client~=2.123.0
 openai~=1.14.3
 pydub~=0.25.1
+pypdf~=4.1.0
 requests~=2.31.0
 tqdm~=4.66.2
