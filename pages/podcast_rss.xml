@@ -47,10 +47,10 @@ xmlns:rawvoice="http://www.rawvoice.com/rawvoiceRssModule/"
     <dc:creator><![CDATA[{{ site.author | cdata_escape }}]]></dc:creator>
     <guid isPermaLink="false">ep{{ ep.date | date: "%Y-%m-%d"}}</guid>
     <description>
-        <![CDATA[Read all summaries including other headlines on: {{ site.url }}{{ site.baseurl }}{{ ep.url }}<br><br>{{ ep.content | strip_html | truncatewords: 30 | expand_urls: site.url | cdata_escape }}]]>
+        <![CDATA[Read all summaries including other headlines on: {{ site.url }}{{ site.baseurl }}{{ ep.url }}&nbsp;<br><br>{{ ep.content | strip_html | truncatewords: 30 | expand_urls: site.url | cdata_escape }}]]>
     </description>
     <content:encoded>
-        <![CDATA[Read all summaries including other headlines on: {{ site.url }}{{ site.baseurl }}{{ ep.url }}<br><br>{{ ep.content | strip_html | truncatewords: 30 | expand_urls: site.url | cdata_escape }}]]>
+        <![CDATA[Read all summaries including other headlines on: {{ site.url }}{{ site.baseurl }}{{ ep.url }}&nbsp;<br><br>{{ ep.content | strip_html | truncatewords: 30 | expand_urls: site.url | cdata_escape }}]]>
     </content:encoded>
     <enclosure url="{{site.url}}{{site.baseurl}}/audio/{{ep.audio}}" length="{{ ep.bytes }}" type="audio/mpeg" />
     <itunes:subtitle>
