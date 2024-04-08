@@ -25,7 +25,7 @@ xmlns:rawvoice="http://www.rawvoice.com/rawvoiceRssModule/"
 <itunes:summary>{{ site.description }}</itunes:summary>
 <itunes:author>{{ site.author }}</itunes:author>
 <itunes:explicit>no</itunes:explicit>
-<itunes:image href="https://raw.githubusercontent.com/shakedzy/techbyai/main/images/byai_720.png" />
+<itunes:image href="https://raw.githubusercontent.com/shakedzy/techbyai/gh-pages/images/byai_720.png" />
 <itunes:owner>
 <itunes:name>{{ site.author }}</itunes:name>
 <itunes:email>{{ site.email }}</itunes:email>
@@ -34,7 +34,7 @@ xmlns:rawvoice="http://www.rawvoice.com/rawvoiceRssModule/"
 <itunes:subtitle>{{ site.description }}</itunes:subtitle>
 <image>
     <title>{{ site.title }}</title>
-    <url>https://raw.githubusercontent.com/shakedzy/techbyai/main/images/byai_720.png</url>
+    <url>https://raw.githubusercontent.com/shakedzy/techbyai/gh-pages/images/byai_720.png</url>
     <link>{{ site.url }}{{ site.baseurl }}</link>
 </image>
 <itunes:category text="News"><itunes:category text="Tech News" /></itunes:category>
@@ -60,7 +60,7 @@ xmlns:rawvoice="http://www.rawvoice.com/rawvoiceRssModule/"
         <![CDATA[Read all summaries including other headlines on: {{ site.url }}{{ site.baseurl }}{{ ep.url }}]]>
     </itunes:summary>
     <itunes:author>{{ site.author }}</itunes:author>
-    <itunes:image href="https://raw.githubusercontent.com/shakedzy/techbyai/main/images/byai_720.png" />
+    <itunes:image href="https://raw.githubusercontent.com/shakedzy/techbyai/gh-pages/images/byai_720.png" />
     <itunes:explicit>no</itunes:explicit>
     <itunes:duration>{{ ep.duration }}</itunes:duration>
   </item>
