@@ -96,7 +96,7 @@ class Routine:
             - You must provide AT LEAST {Settings().editorial.reporter_items} items
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             - If the title you got from the search ends with "...", visit the website and extract the full title from there
-            - DO NOT use web pages of lists of articles, but only pages of a single article! The URL must point to the specific article you choose, not news aggregation or trends list
+            - Make sure the URL you provide direct to the exact article you chose (and not to a some news aggregation). Search for the specific URL of the article if needed
             - Your response should be formatted as JSON, where the items titles (meaning: the titles of the 
               articles you read) are the keys, and the values are the items URLs.
               Example:
