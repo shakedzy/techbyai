@@ -29,18 +29,26 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e .  
     
-    - name: Run 
+    - name: Run Routine
       run: run_routine
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         GOOGLE_SEARCH_CSE_ID: ${{ secrets.GOOGLE_SEARCH_CSE_ID }}
         GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
+
+    - uses: actions/checkout@v4
+      with:
+        ref: 'gh-pages'  
+        path: 'gh-pages'
     
-    - name: Commit Changes
+    - name: Commit Changes to gh-pages Branch
       run: |
+        cp -r results/*.md gh-pages/_posts/
+        cp -r results/*.mp3 gh-pages/audio/
+        cd gh-pages
         git config --global user.name ${{ secrets.USERNAME }}
         git config --global user.email ${{ secrets.EMAIL_ADDRESS }}
         git add .
         CURRENT_TIME=$(date +'%Y-%m-%d %H:%M:%S')
         git commit -m "Automated publication: $CURRENT_TIME" || echo "No changes to commit"
-        git push
+        git push origin gh-pages

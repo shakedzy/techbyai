@@ -12,6 +12,6 @@ class ItemSuggestion:
 
     @property
     def id(self) -> str:
-        return self.title[0].upper() + str(int(hash(self.title)%99999))
+        return self.title[0].upper() + str(int(hash(self.url)%99999))
     
     as_dict = asdict 

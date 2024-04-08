@@ -73,6 +73,7 @@ class Assistant:
                     tool_name = tool_call.function.name
                     if tool_name == "multi_tool_use.parallel":
                         # This is a tool hallucination by GPT, it does not exist
+                        tool_name = "multi_tool_use_parallel"  # match '^[a-zA-Z0-9_-]{1,64}$'
                         tool_result = "There's no such tool names `multi_tool_use.parallel`, use the correct syntax to call multiple tools!"
                     else:
                         arguments = json.loads(tool_call.function.arguments)

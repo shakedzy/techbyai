@@ -2,6 +2,7 @@ import io
 import re
 import os
 import json
+import errno
 import pathlib
 from time import time
 from openai import OpenAI
@@ -94,6 +95,8 @@ class Routine:
             - Search the web and read webpages to complete your assignment. Make as many searches as required
             - You must provide AT LEAST {Settings().editorial.reporter_items} items
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
+            - If the title you got from the search ends with "...", visit the website and extract the full title from there
+            - DO NOT use web pages of lists of articles, but only pages of a single article! The URL must point to the specific article you choose, not news aggregation or trends list
             - Your response should be formatted as JSON, where the items titles (meaning: the titles of the 
               articles you read) are the keys, and the values are the items URLs.
               Example:
@@ -124,7 +127,7 @@ class Routine:
             f"""
             The list below contains the items suggestions provided by your staff:
             {suggestions_text}
-            Your task is to select the top {Settings().editorial.final_items} (or less) from this list to be featured in today's issue.
+            Your task is to select the top ~{Settings().editorial.final_items} (but no less than {Settings().editorial.final_items - 2}) from this list to be featured in today's issue.
             Note that as your reporters worked independently, some suggestions might be duplicates (either
             same topic from different sources or even the exact same item). Make sure to select {Settings().editorial.final_items} DIFFERENT
             items of different topics. Rank your selection from 1 to {Settings().editorial.final_items}, where 1 is the top item of today's issue.
@@ -141,7 +144,8 @@ class Routine:
             Guidelines:
             - Never rank two items which are considered similar! Choose your favorite, list the rest under the `similar` list.
             - REFRAIN from having promotional content on your magazine. 
-              If you're using content shared by the same company or person who created it, make sure it actually professionally valuable, and simply self-endorsing
+              If you're using content shared by the same company or person who created it, make sure it actually professionally valuable, and simply self-endorsing.
+              Verify the article really has valuable information which will enrich the readers!
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             REMEMBER: You are being assessed by the quality of the content of your magazine, make sure to make it as 
             interesting and professional as possible!
@@ -167,30 +171,50 @@ class Routine:
     
     def _write_items(self, items: list[list[ItemSuggestion]]) -> list[list[ItemSuggestion]]:
         error_message = "<ERROR>"
-        task = dedent(
-            """
-            Write a summary for toady's issue on {title} (URL: {url}). 
-            Follow these guidelines:
-            - It should be no more than {max_words} words
-            - Do NOT add a title, the editor will add it later
-            - Your response is printed as it is, so do not add any other remarks beside the summary
-            - Use Markdown syntax
-
-            IMPORTANT: If you encounter an error or an issue completing this task, simple respond with "{error}".
-            """)
+        remove_message = "<REMOVE>"
+        
+        def editor_task(text: str) -> str:
+            task = dedent(
+                f"""
+                The text below is the final article written by one of your reporters.
+                Review it, and edit it if you fell it is necessary in order for it to meet your magazine's guidelines.
+                Still, try to intervene as les as possible, if at all. Do so only if you find it to be necessary.
+                Also, you have the option not to use this article in you magazine, if you believe it does not mee your standards
+                or will have no value to your professional readers. 
+                - If you choose to remove this article, reply only with {remove_message}
+                - If you wish to keep it, reply only with the final version of your edited version. Remember it must not exceed {Settings().editorial.max_words_per_item}!
+                  Also, your response will be used as it is, so do not add any other remarks but the text. 
+                - If you choose not to edit the text at all, copy the text as it is, word for word
+                """)
+            result = self.editor.do(f"{task}\n---\n{text}")
+            self.cost += result['cost']
+            return result['response']
         
         def reporter_tasks(reporter: Assistant, reporter_items: list[ItemSuggestion]) -> list[ItemSuggestion]:  
             for i, item in enumerate(reporter_items):
                 if item.rank < 0:
                     continue
-                result = reporter.do(task.format(
-                    title=item.title, 
-                    url=item.url, 
-                    max_words=Settings().editorial.max_words_per_item,
-                    error=error_message))
+
+                task = dedent(
+                    f"""
+                    Write a summary for toady's issue on {item.title} (URL: {item.url}). 
+                    Follow these guidelines:
+                    - It should be no more than {Settings().editorial.max_words_per_item} words
+                    - Do NOT add a title, the editor will add it later
+                    - Your response is printed as it is, so do not add any other remarks beside the summary
+                    - Use Markdown syntax
+
+                    IMPORTANT: If you encounter an error or an issue completing this task, simple respond with "{error_message}".
+                    """)
+                result = reporter.do(task)
                 self.cost += result['cost']
                 if not error_message in result['response']:
-                    item.text = result['response']
+                    text = result['response']
+                    edited_text = editor_task(text)
+                    if remove_message in edited_text:
+                        item.rank = -1
+                    else:
+                        item.text = edited_text
                 else:
                     item.rank = -1
                 reporter_items[i] = item
@@ -268,6 +292,7 @@ class Routine:
         output_audio += title_segment
         for segment in segments:
             output_audio += segment
+        output_audio += AudioSegment.silent(duration=1000)
         length_seconds = int(len(output_audio) / 1000)
         output_audio.export(filepath, format="mp3")
         return length_seconds
@@ -276,24 +301,7 @@ class Routine:
     def _domain_of_url(url: str) -> str:
         return urlparse(url).netloc
     
-    def do(self) -> None:
-        self.start_time = time()
-        self.cost = 0.
-
-        self.logger.info("Starting - Hiring editor", color='green')
-        self.editor =  self._hire_editor()
-        
-        self.logger.info(f"Hiring staff [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
-        self.reporters = self._hire_reporters()
-        
-        self.logger.info(f"Performing research [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
-        suggestions = self._research() 
-
-        self.logger.info(f"Selecting top items [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
-        suggestions = self._select_items(suggestions) 
-        
-        self.logger.info(f"Writing articles [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
-        items = flatten(self._write_items(suggestions))
+    def _write_markdown_article(self, items: list[ItemSuggestion]) -> str:
         items = sorted(items, key=lambda s: s.rank if s.rank > 0 else 999)
         md_ranked_articles = []
         md_unranked_articles = []
@@ -328,8 +336,42 @@ class Routine:
                 md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{domain}]({item.url})]{similar_text}\n\n{item.text}")
             ids_of_written.append(item.id)
 
+
+        self.logger.info(f"Creating title for article [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
+        
         self.logger.info(f"Creating title for article [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
         full_article = '\n\n'.join(md_ranked_articles) + '\n\n**Other headlines:**\n' + '\n'.join(md_unranked_articles)
+        return full_article
+
+    
+    def do(self) -> None:
+        OUTPUT_DIR = "results"
+        try:
+            os.makedirs(OUTPUT_DIR)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+    
+        self.start_time = time()
+        self.cost = 0.
+
+        self.logger.info("Starting - Hiring editor", color='green')
+        self.editor =  self._hire_editor()
+        
+        self.logger.info(f"Hiring staff [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
+        self.reporters = self._hire_reporters()
+        
+        self.logger.info(f"Performing research [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
+        suggestions = self._research() 
+
+        self.logger.info(f"Selecting top items [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
+        suggestions = self._select_items(suggestions) 
+        
+        self.logger.info(f"Writing articles [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
+        items = flatten(self._write_items(suggestions))
+        
+        self.logger.info(f"Composing article [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
+        full_article = self._write_markdown_article(items)
         title_and_subtitle = self._create_title_and_subtitle(full_article)
         title_and_subtitle['title'] = title_and_subtitle['title'] or f'AI News: {datetime.now().strftime("%A, %d %B, %Y")}'
         title_and_subtitle['subtitle'] = title_and_subtitle['subtitle'] or "All the latest news about AI, brought to you by AI"
@@ -343,7 +385,7 @@ class Routine:
         minutes, seconds = divmod(length_seconds, 60)
         duration_str = "{:02d}:{:02d}".format(int(minutes), int(seconds))
 
-        filepath = os.path.join(self.top_directory, '_posts', filename+'.md')
+        filepath = os.path.join(self.top_directory, filename+'.md')
         with open(filepath, 'w') as f:
             f.write(f'---\nlayout: post\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\naudio: {filename}.mp3\ndate: {datetime.now().strftime("%Y-%m-%d")}\nduration: "{duration_str}"\nbytes: {os.path.getsize(recording_filepath)}\n---\n\n')
             f.write(full_article + '\n\n')  
