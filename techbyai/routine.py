@@ -2,7 +2,6 @@ import io
 import re
 import os
 import json
-import errno
 import pathlib
 from time import time
 from openai import OpenAI
@@ -343,15 +342,14 @@ class Routine:
         full_article = '\n\n'.join(md_ranked_articles) + '\n\n**Other headlines:**\n' + '\n'.join(md_unranked_articles)
         return full_article
 
-    
+    @property
+    def output_dir(self) -> str:
+        output_dir = os.path.join(self.top_directory, "results")
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        return output_dir
+
     def do(self) -> None:
-        OUTPUT_DIR = "results"
-        try:
-            os.makedirs(OUTPUT_DIR)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-    
         self.start_time = time()
         self.cost = 0.
 
@@ -380,12 +378,12 @@ class Routine:
         filename = f'{datetime.now().strftime("%Y-%m-%d")}-{alphanumeric_title.lower().replace(" ","-")}'
 
         self.logger.info(f"Narrating [elapsed time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$]", color='green')
-        recording_filepath = os.path.join(self.top_directory, 'audio', filename+'.mp3')
+        recording_filepath = os.path.join(self.output_dir, filename+'.mp3')
         length_seconds = self._narrate(items, title=title_and_subtitle['title'], filepath=recording_filepath)
         minutes, seconds = divmod(length_seconds, 60)
         duration_str = "{:02d}:{:02d}".format(int(minutes), int(seconds))
 
-        filepath = os.path.join(self.top_directory, filename+'.md')
+        filepath = os.path.join(self.output_dir filename+'.md')
         with open(filepath, 'w') as f:
             f.write(f'---\nlayout: post\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\naudio: {filename}.mp3\ndate: {datetime.now().strftime("%Y-%m-%d")}\nduration: "{duration_str}"\nbytes: {os.path.getsize(recording_filepath)}\n---\n\n')
             f.write(full_article + '\n\n')  
