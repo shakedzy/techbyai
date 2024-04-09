@@ -34,12 +34,13 @@ def web_search(query: str) -> str:
     Description: This is the number one site for grapes fans and lovers
     """
     MAX_RESULTS = 10
+    sites_filter = ' '.join([f'-site:{domain}' for domain in Settings().search.blacklist])
     try:
         results = []
         service = build("customsearch", "v1", developerKey=os.environ['GOOGLE_SEARCH_API_KEY'])
         response = service.cse().list(
             # Google CSE API docs: https://developers.google.com/custom-search/v1/reference/rest/v1/cse/list
-            q=query, 
+            q=f"{query} {sites_filter}", 
             cx=os.environ['GOOGLE_SEARCH_CSE_ID'], 
             num=MAX_RESULTS,
             dateRestrict=f'd{Settings().search.past_days}'

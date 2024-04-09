@@ -16,6 +16,7 @@ user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
 
 [search]
 past_days = 1
+blacklist = ['wikipedia.org', 'medium.com']
 
 [editorial]
 name = "Tech by AI"
@@ -31,10 +32,37 @@ topics = [
         "AI Regulation and Policy", 
         "AI and Cybersecurity", 
         "AI in Robotics",
+        "Humanoid Robots",
         "Promising startups in Generative AI", 
-        "Distinguished companies (like OpenAI, Anthropic, Mistral, Google, Cohere, Microsoft, Amazon, Midjourney, Stability, etc.)",
         "Hardware for AI",
         "New Generative AI models",
         "Cutting-edge capabilities and breakthoughs in AI",
         "New AI-related researches"
+        ]
+companies = [
+        "OpenAI", 
+        "Anthropic", 
+        "Mistral", 
+        "Google", 
+        "Meta", 
+        "Cohere", 
+        "Microsoft", 
+        "Amazon",
+        "NVidia", 
+        "Midjourney", 
+        "Stability AI", 
+        "Eleven Labs", 
+        "Hugging Face"
+        ]
+people = [
+        "Aravind Srinivas", 
+        "Brett Adcock", 
+        "Satya Nadella",
+        "Yam Peleg", 
+        "Guillaume Lample", 
+        "Arthur Mensch", 
+        "Yann LeCun", 
+        "Andrej Karpathy", 
+        "Andrew Ng", 
+        "Geoffrey Hinton"
         ]

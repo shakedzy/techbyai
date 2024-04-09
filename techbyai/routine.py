@@ -6,7 +6,6 @@ import pathlib
 from time import time
 from openai import OpenAI
 from pydub import AudioSegment
-from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from random import randint, shuffle
 from textwrap import dedent
@@ -14,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .assistant import Assistant
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
-from .utils import flatten, ordinal_number
+from .utils import flatten, ordinal_number, domain_of_url
 from .settings import Settings
 
 
@@ -29,7 +28,15 @@ class Routine:
 
     @property
     def topics(self) -> str:
-        topics_list = Settings().editorial.topics
+        companies: list[str] = Settings().editorial.companies
+        people: list[str] = Settings().editorial.people
+        topics_list: list[str] = Settings().editorial.topics
+        if companies:
+            shuffle(companies)
+            topics_list.append(f"Companies such as: {' '.join(companies)}")
+        if people:
+            shuffle(people)
+            topics_list.append(f"News and projects coming from top-minds like these: {' '.join(people)}")
         shuffle(topics_list)
         return ", ".join(topics_list)
 
@@ -259,7 +266,7 @@ class Routine:
             response = client.audio.speech.create(
                 model=Settings().tts.model,
                 voice=Settings().tts.voice,
-                input=f"Article {idx} - {item.title}\nFrom: {self._domain_of_url(item.url)}\n\n{item.text}"
+                input=f"Article {idx} - {item.title}\nFrom: {domain_of_url(item.url)}\n\n{item.text}"
             )
             audio_data = io.BytesIO(response.content) 
             audio_segment = AudioSegment.silent(duration=1000) + AudioSegment.from_file(audio_data, format="mp3")
@@ -295,10 +302,6 @@ class Routine:
         length_seconds = int(len(output_audio) / 1000)
         output_audio.export(filepath, format="mp3")
         return length_seconds
-
-    @staticmethod
-    def _domain_of_url(url: str) -> str:
-        return urlparse(url).netloc
     
     def _write_markdown_article(self, items: list[ItemSuggestion]) -> str:
         items = sorted(items, key=lambda s: s.rank if s.rank > 0 else 999)
@@ -315,7 +318,7 @@ class Routine:
                     u = item.url.split("://")[-1]
                     if u.endswith("/"): 
                         u = u[:-1]
-                    if u != self._domain_of_url(item.url):
+                    if u != domain_of_url(item.url):
                         md_unranked_articles.append(f'* [{item.title.replace(" | ", " ").replace("|", " ")}]({item.url})')
             else:
                 similar_items = []
@@ -324,14 +327,14 @@ class Routine:
                     if len(sim_list) == 0:
                         continue
                     sim = sim_list[0]
-                    if self._domain_of_url(sim.url) == self._domain_of_url(item.url):
+                    if domain_of_url(sim.url) == domain_of_url(item.url):
                         continue
-                    similar_items.append(f'> * [{sim.title.replace(" | ", " ").replace("|", " ")}]({sim.url}) ({self._domain_of_url(sim.url)})')
+                    similar_items.append(f'> * [{sim.title.replace(" | ", " ").replace("|", " ")}]({sim.url}) ({domain_of_url(sim.url)})')
                     ids_of_written.append(sim.id)
                 if similar_items:
                     similar_items = ["\n> **See also:**"] + similar_items
                 similar_text = '\n'.join(similar_items)
-                domain = self._domain_of_url(item.url)
+                domain = domain_of_url(item.url)
                 md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{domain}]({item.url})]{similar_text}\n\n{item.text}")
             ids_of_written.append(item.id)
 
