@@ -17,6 +17,8 @@ user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
 [search]
 past_days = 1
 blacklist = ['wikipedia.org', 'medium.com']
+# Google Cloud pricing
+cost_per_query = 0.005  # dollars
 
 [editorial]
 name = "Tech by AI"

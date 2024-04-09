@@ -79,6 +79,8 @@ class Assistant:
                         arguments = json.loads(tool_call.function.arguments)
                         self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
                         tool_result = self.callables[tool_name](**arguments)
+                        if tool_name == 'web_search':
+                            cost += Settings().search.cost_per_query
                     messages.append({
                         "tool_call_id": tool_call.id,
                         "role": "tool",
