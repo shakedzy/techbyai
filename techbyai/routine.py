@@ -98,7 +98,8 @@ class Routine:
         guidelines = dedent(
             f"""
             IMPORTANT GUIDELINES:
-            - Search the web and read webpages to complete your assignment. Make as many searches as required
+            - Come up with at least {2*Settings().editorial.reporter_items} DIFFERENT search queries. 
+              For each query, search the web and read webpages to complete your assignment
             - You must provide AT LEAST {Settings().editorial.reporter_items} items
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             - If the title you got from the search ends with "...", visit the website and extract the full title from there
