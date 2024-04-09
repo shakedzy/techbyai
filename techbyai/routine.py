@@ -383,7 +383,7 @@ class Routine:
         minutes, seconds = divmod(length_seconds, 60)
         duration_str = "{:02d}:{:02d}".format(int(minutes), int(seconds))
 
-        filepath = os.path.join(self.output_dir filename+'.md')
+        filepath = os.path.join(self.output_dir, filename+'.md')
         with open(filepath, 'w') as f:
             f.write(f'---\nlayout: post\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\naudio: {filename}.mp3\ndate: {datetime.now().strftime("%Y-%m-%d")}\nduration: "{duration_str}"\nbytes: {os.path.getsize(recording_filepath)}\n---\n\n')
             f.write(full_article + '\n\n')  
