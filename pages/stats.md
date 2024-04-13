@@ -63,6 +63,13 @@ function createChart(data) {
         },
         options: {
             scales: {
+                x: {
+                    reverse: true,
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
                 'y-axis-cost': {
                     type: 'linear',
                     position: 'left',
