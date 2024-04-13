@@ -151,6 +151,7 @@ class Routine:
             ```
             Guidelines:
             - Never rank two items which are considered similar! Choose your favorite, list the rest under the `similar` list.
+            - Verify the article and its content are from the past 2 days - do NOT rank article which discuss old news or topics!
             - REFRAIN from having promotional content on your magazine. 
               If you're using content shared by the same company or person who created it, make sure it actually professionally valuable, and simply self-endorsing.
               Verify the article really has valuable information which will enrich the readers!
