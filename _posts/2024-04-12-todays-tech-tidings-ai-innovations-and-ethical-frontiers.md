@@ -6,6 +6,10 @@ audio: 2024-04-12-todays-tech-tidings-ai-innovations-and-ethical-frontiers.mp3
 date: 2024-04-12
 duration: "04:09"
 bytes: 997965
+model: gpt-4-turbo-preview
+cost: 1.38
+processing: "0:04:52.611661"
+version: "0.0.3"
 ---
 
 # Computer Theorist Wins $1 Million Turing Award
@@ -53,9 +57,9 @@ The UK's Competition and Markets Authority (CMA) has updated its review on AI Fo
 
 ---
 ### Technical details
-Created at: 12 April, 2024, 03:24:44, using `gpt-4-turbo-preview`.
+Created at: 12 April, 2024, 03:24:44, using `{{page.model}}`.
 
-Processing time: 0:04:52.611661, cost: 1.38$
+Processing time: {{page.processing}}, cost: {{page.cost}}$
 <details>
 <summary>The Staff</summary>
 <div markdown="1">

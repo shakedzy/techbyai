@@ -6,6 +6,10 @@ audio: 2024-04-07-ais-next-frontier-innovations-and-ethical-debates.mp3
 date: 2024-04-07
 duration: "07:00"
 bytes: 1684461
+model: gpt-4-turbo-preview
+cost: 0.96
+processing: "0:02:10.142072"
+version: "0.0.1"
 ---
 
 # Next-Gen AI: Advancing Watermarking, Algorithm Synthesis, and Diverse Applications
@@ -51,9 +55,9 @@ Anthropic's recent breakthrough in AI research demonstrates an exciting advancem
 
 ---
 ### Technical details
-Created at: 07 April, 2024, 03:21:02, using `gpt-4-turbo-preview`.
+Created at: 07 April, 2024, 03:21:02, using `{{page.model}}`.
 
-Processing time: 0:02:10.142072, cost: 0.96$
+Processing time: {{page.processing}}, cost: {{page.cost}}$
 <details>
 <summary>The Staff</summary>
 <div markdown="1">

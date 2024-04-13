@@ -6,6 +6,10 @@ audio: 2024-04-13-ais-pioneering-leap-todays-technological-marvels.mp3
 date: 2024-04-13
 duration: "06:24"
 bytes: 1539021
+model: gpt-4-turbo-preview
+cost: 1.59
+processing: "0:02:14.406565"
+version: "0.0.3"
 ---
 
 # Figure 01: The Robot Closest to the Humanoid Machines of Science Fiction
@@ -59,9 +63,9 @@ The study, "Towards an international regulatory framework for AI safety," draws 
 
 ---
 ### Technical details
-Created at: 13 April, 2024, 03:18:44, using `gpt-4-turbo-preview`.
+Created at: 13 April, 2024, 03:18:44, using `{{page.model}}`.
 
-Processing time: 0:02:14.406565, cost: 1.59$
+Processing time: {{page.processing}}, cost: {{page.cost}}$
 <details>
 <summary>The Staff</summary>
 <div markdown="1">

@@ -6,6 +6,10 @@ audio: 2024-04-09-ais-bold-leap-forward-todays-innovations.mp3
 date: 2024-04-09
 duration: "04:56"
 bytes: 1187181
+model: gpt-4-turbo-preview
+cost: 1.01
+processing: "0:02:17.132672"
+version: "0.0.2"
 ---
 
 # Unleashing The Future: A Sneak Peek Into NVIDIA's Project GR00T
@@ -49,9 +53,9 @@ Generative AI revolutionizes pharmaceuticals by accelerating drug discovery. It 
 
 ---
 ### Technical details
-Created at: 09 April, 2024, 05:10:46, using `gpt-4-turbo-preview`.
+Created at: 09 April, 2024, 05:10:46, using `{{page.model}}`.
 
-Processing time: 0:02:17.132672, cost: 1.01$
+Processing time: {{page.processing}}, cost: {{page.cost}}$
 <details>
 <summary>The Staff</summary>
 <div markdown="1">

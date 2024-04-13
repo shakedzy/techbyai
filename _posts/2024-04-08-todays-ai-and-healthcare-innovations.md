@@ -6,6 +6,10 @@ audio: 2024-04-08-todays-ai-and-healthcare-innovations.mp3
 date: 2024-04-08
 duration: "05:32"
 bytes: 1331373
+model: gpt-4-turbo-preview
+cost: 5.06
+processing: "0:02:43.398669"
+version: "0.0.1"
 ---
 
 # Researchers Invent Artificial Intelligence Model to Design New Superbug-Fighting Antibiotics
@@ -51,9 +55,9 @@ Nanoflex Robotics is set to revolutionize stroke care with the launch of a robot
 
 ---
 ### Technical details
-Created at: 08 April, 2024, 03:22:58, using `gpt-4-turbo-preview`.
+Created at: 08 April, 2024, 03:22:58, using `{{page.model}}`.
 
-Processing time: 0:02:43.398669, cost: 5.06$
+Processing time: {{page.processing}}, cost: {{page.cost}}$
 <details>
 <summary>The Staff</summary>
 <div markdown="1">

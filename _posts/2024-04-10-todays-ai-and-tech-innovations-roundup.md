@@ -6,6 +6,10 @@ audio: 2024-04-10-todays-ai-and-tech-innovations-roundup.mp3
 date: 2024-04-10
 duration: "06:08"
 bytes: 1476141
+model: gpt-4-turbo-preview
+cost: 1.33
+processing: "0:02:54.160067"
+version: "0.0.3"
 ---
 
 # Google Cloud Next 2024: Gemini and generative AI updates
@@ -57,9 +61,9 @@ Southeast Asia stands at a crucial juncture, seeking to harmonize AI innovation 
 
 ---
 ### Technical details
-Created at: 10 April, 2024, 03:22:53, using `gpt-4-turbo-preview`.
+Created at: 10 April, 2024, 03:22:53, using `{{page.model}}`.
 
-Processing time: 0:02:54.160067, cost: 1.33$
+Processing time: {{page.processing}}, cost: {{page.cost}}$
 <details>
 <summary>The Staff</summary>
 <div markdown="1">

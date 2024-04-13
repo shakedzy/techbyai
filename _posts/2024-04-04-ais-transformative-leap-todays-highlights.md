@@ -6,6 +6,10 @@ audio: 2024-04-04-ais-transformative-leap-todays-highlights.mp3
 date: 2024-04-04
 duration: "09:38"
 bytes: 2313644
+model: gpt-4-turbo-preview
+cost: 1.09
+processing: "0:03:15.350822"
+version: "0.0.1"
 ---
 
 # Stability AI's Latest Advancements in Foundation Models
@@ -64,9 +68,9 @@ At the Game Developers Conference (GDC) 2024, Nvidia showcased its innovative NE
 
 ---
 ### Technical details
-Created at: 04 April, 2024, 13:29:41, using `gpt-4-turbo-preview`.
+Created at: 04 April, 2024, 13:29:41, using `{{page.model}}`.
 
-Processing time: 0:03:15.350822, cost: 1.09$
+Processing time: {{page.processing}}, cost: {{page.cost}}$
 <details>
 <summary>The Staff</summary>
 <div markdown="1">

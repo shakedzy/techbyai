@@ -1,0 +1,31 @@
+---
+layout: page
+title: Archive
+permalink: /archive/
+---
+<section class="section">
+  <div class="container">
+      <div class="columns">
+          <div class="column is-half is-offset-one-quarter">
+
+            {% assign posts_by_month = site.posts | group_by_exp: "post", "post.date | date: '%B %Y'" %}
+            {% for group in posts_by_month %}
+            <div class="box">
+              <details>
+                <summary style="font-size: larger;"><b>{{ group.name }}</b></summary>
+                <ul style="padding-top: 5px;">
+                  {% for post in group.items %}
+                    <li style="padding: 5px;">
+                      <span>{{ post.date | date_to_string }}:</span>
+                      <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </details>
+            </div>
+            {% endfor %}
+          
+          </div>
+        </div>
+    </div>
+</section>

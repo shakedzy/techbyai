@@ -6,6 +6,10 @@ audio: 2024-04-11-ais-expansive-horizon-todays-breakthroughs.mp3
 date: 2024-04-11
 duration: "05:41"
 bytes: 1365741
+model: gpt-4-turbo-preview
+cost: 1.27
+processing: "0:04:07.179833"
+version: "0.0.3"
 ---
 
 # Decoding Foundation Models the Building Blocks of AI | NVIDIA Blog
@@ -58,9 +62,9 @@ Artificial Intelligence (AI) is reshaping the workplace, offering opportunities 
 
 ---
 ### Technical details
-Created at: 11 April, 2024, 03:22:53, using `gpt-4-turbo-preview`.
+Created at: 11 April, 2024, 03:22:53, using `{{page.model}}`.
 
-Processing time: 0:04:07.179833, cost: 1.27$
+Processing time: {{page.processing}}, cost: {{page.cost}}$
 <details>
 <summary>The Staff</summary>
 <div markdown="1">

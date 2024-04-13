@@ -6,6 +6,10 @@ audio: 2024-04-05-ais-2024-milestone-innovation-and-ethical-challenges.mp3
 date: 2024-04-05
 duration: "11:27"
 bytes: 2750636
+model: gpt-4-turbo-preview
+cost: 1.13
+processing: "0:03:15.918598"
+version: "0.0.1"
 ---
 
 # The AI Landscape in 2024: Trends and Top Startups
@@ -74,9 +78,9 @@ The integration of Artificial Intelligence (AI) in healthcare, particularly in c
 
 ---
 ### Technical details
-Created at: 05 April, 2024, 13:10:47, using `gpt-4-turbo-preview`.
+Created at: 05 April, 2024, 13:10:47, using `{{page.model}}`.
 
-Processing time: 0:03:15.918598, cost: 1.13$
+Processing time: {{page.processing}}, cost: {{page.cost}}$
 <details>
 <summary>The Staff</summary>
 <div markdown="1">

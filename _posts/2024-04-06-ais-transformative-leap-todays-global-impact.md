@@ -6,6 +6,10 @@ audio: 2024-04-06-ais-transformative-leap-todays-global-impact.mp3
 date: 2024-04-06
 duration: "11:17"
 bytes: 2708589
+model: gpt-4-turbo-preview
+cost: 1.15
+processing: "0:02:32.870659"
+version: "0.0.1"
 ---
 
 # European approach to artificial intelligence | Shaping Europe's ...
@@ -74,9 +78,9 @@ Artificial Intelligence (AI) is increasingly becoming a part of our daily lives,
 
 ---
 ### Technical details
-Created at: 06 April, 2024, 03:21:20, using `gpt-4-turbo-preview`.
+Created at: 06 April, 2024, 03:21:20, using `{{page.model}}`.
 
-Processing time: 0:02:32.870659, cost: 1.15$
+Processing time: {{page.processing}}, cost: {{page.cost}}$
 <details>
 <summary>The Staff</summary>
 <div markdown="1">

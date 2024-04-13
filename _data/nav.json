@@ -1,6 +1,14 @@
 {
     "items": [
         {
+            "name": "Archive",
+            "link": "/archive/"
+        },
+        {
+            "name": "Stats",
+            "link": "/stats/"
+        },
+        {
             "name": "About",
             "link": "/about/"
         },

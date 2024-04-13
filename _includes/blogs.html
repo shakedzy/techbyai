@@ -3,7 +3,7 @@
         <div class="columns">
             <div class="column is-half is-offset-one-quarter">
 
-                {% for post in site.posts %}
+                {% for post in site.posts limit:7 %}
                 <div class="box">
                     <article class="media">
                         <div class="media-content">
@@ -18,7 +18,9 @@
                     </article>
                 </div>
                 {% endfor %}
-
+                <div style="text-align: center; padding-top: 20px; font-size: larger;">
+                    <a href="{{ '/archive/' | relative_url }}">See older posts</a>
+                </div>
             </div>
         </div>
     </div>
