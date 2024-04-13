@@ -21,3 +21,19 @@
         gtag('config', 'G-3LRBL85CED');
     </script>
 </head>
+
+
+<!-- Facebook Meta Tags -->
+<meta property="og:url" content="{{ page.url | relative_url }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{% if page.title %} {{ page.title }} | {% endif %} {{ site.name }}">
+<meta property="og:description" content="{{ site.description }}">
+<meta property="og:image" content="{{ '/images/social_banner.png' | relative_url }}">
+
+<!-- Twitter Meta Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:domain" content="{{ site.url }}">
+<meta property="twitter:url" content="{{ page.url | relative_url }}">
+<meta name="twitter:title" content="{% if page.title %} {{ page.title }} | {% endif %} {{ site.name }}">
+<meta name="twitter:description" content="{{ site.description }}">
+<meta name="twitter:image" content="{{ '/images/social_banner.png' | relative_url }}">
