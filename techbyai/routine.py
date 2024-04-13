@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from random import randint, shuffle
 from textwrap import dedent
 from concurrent.futures import ThreadPoolExecutor
+from . import __version__
 from .assistant import Assistant
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
@@ -352,6 +353,26 @@ class Routine:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         return output_dir
+    
+    def _markdown_metadata(self, title: str, subtitle: str, audio_filename: str, audio_filepath: str, audio_duration: str) -> str:
+        return dedent(
+            f"""
+            ---
+            layout: post
+            title: "{title}"
+            subtitle: "{subtitle}"
+            audio: {audio_filename}
+            date: {datetime.now().strftime("%Y-%m-%d")}
+            duration: "{audio_duration}"
+            bytes: {os.path.getsize(audio_filepath)}
+            model: {Settings().llm.model}
+            cost: {round(self.cost, 2)}
+            processing: "{self._get_elapsed_time()}"
+            version: "{__version__}"
+            ---
+            """.strip())
+
+        #f'---\n\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\naudio: {filename}.mp3\ndate: \n}\n---\n\n'
 
     def do(self) -> None:
         self.start_time = time()
@@ -389,9 +410,9 @@ class Routine:
 
         filepath = os.path.join(self.output_dir, filename+'.md')
         with open(filepath, 'w') as f:
-            f.write(f'---\nlayout: post\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\naudio: {filename}.mp3\ndate: {datetime.now().strftime("%Y-%m-%d")}\nduration: "{duration_str}"\nbytes: {os.path.getsize(recording_filepath)}\n---\n\n')
+            f.write(self._markdown_metadata(title=title_and_subtitle['title'], subtitle=title_and_subtitle['subtitle'], audio_filename=filename+".mp3", audio_filepath=recording_filepath, audio_duration=duration_str) + '\n\n')
             f.write(full_article + '\n\n')  
-            f.write(f'---\n### Technical details\nCreated at: {datetime.now().strftime("%d %B, %Y, %H:%M:%S")}, using `{Settings().llm.model}`.\n\nProcessing time: {self._get_elapsed_time()}, cost: {round(self.cost, 2)}$\n')
+            f.write(f'---\n### Technical details\nCreated at: {datetime.now().strftime("%d %B, %Y, %H:%M:%S")}, ' + 'using `{{ page.model }}`.\n\nProcessing time: {{ page.processing }}, cost: {{ page.cost }}$\n')
             f.write(f'<details>\n<summary>The Staff</summary>\n<div markdown="1">\nEditor: {self.editor.name}\n\n```\n{self.editor.definition}\n```\n\n')
             f.write('\n\n'.join([f'{reporter.name}:\n\n```\n{reporter.definition}\n```' for reporter in self.reporters]))
             f.write("\n</div>\n</details>\n")
