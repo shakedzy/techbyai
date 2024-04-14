@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .assistant import Assistant
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
-from .utils import flatten, ordinal_number, domain_of_url, get_version
+from .utils import flatten, ordinal_number, domain_of_url, get_version, path_to_resource
 from .settings import Settings
 
 
@@ -139,11 +139,13 @@ class Routine:
             same topic from different sources or even the exact same item). Make sure to select {Settings().editorial.final_items} DIFFERENT
             items of different topics. Rank your selection from 1 to {Settings().editorial.final_items}, where 1 is the top item of today's issue.
             Return your selection as JSON, where the item ID is the key, and the value is another dictionary, holding
-            your chosen rank and a list of similar item IDs to that item, if any. See the example below:
+            your chosen rank, a one sentence explanation (for the readers) to why this item was selected, and a list of similar item IDs to that item, if any. 
+            See the example below:
             ```json
             {{"ITEM_ID": 
                 {{
                     "rank": int_value,
+                    "reason": "YOUR ONE-SENTENCE EXPLANATION TO THE READERS FOR WHY THIS ITEM WAS SELECTED"
                     "similar": ["ID_OF_SIMILAR_ITEMS", ...]  // keep empty if none
                 }}
             }}
@@ -151,6 +153,7 @@ class Routine:
             Guidelines:
             - Never rank two items which are considered similar! Choose your favorite, list the rest under the `similar` list.
             - Verify the article and its content are from the past 2 days - do NOT rank article which discuss old news or topics!
+            - Your one-sentence explanation is directed to the readers, write it as if your talking to them directly (use second-body if needed)
             - REFRAIN from having promotional content on your magazine. 
               If you're using content shared by the same company or person who created it, make sure it actually professionally valuable, and simply self-endorsing.
               Verify the article really has valuable information which will enrich the readers!
@@ -173,6 +176,7 @@ class Routine:
                     suggestion = reporter_suggestions[idx]
                     suggestion.rank = int(dct['rank'])
                     suggestion.similar_ids = dct.get('similar', [])
+                    suggestion.editorial_note = dct['reason']
                     reporter_suggestions[idx] = suggestion
                     break
         return suggestions
@@ -300,7 +304,7 @@ class Routine:
         output_audio += title_segment
         for segment in segments:
             output_audio += segment
-        output_audio += AudioSegment.silent(duration=1000)
+        output_audio += (AudioSegment.silent(duration=1000) + AudioSegment.from_mp3(path_to_resource('outro.mp3')) + AudioSegment.silent(duration=1000))
         length_seconds = int(len(output_audio) / 1000)
         output_audio.export(filepath, format="mp3")
         return length_seconds
@@ -338,6 +342,7 @@ class Routine:
                 similar_text = '\n'.join(similar_items)
                 domain = domain_of_url(item.url)
                 md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{domain}]({item.url})]{similar_text}\n\n{item.text}")
+                self.logger.info(f"Editor's note: \"{item.title}\" was chosen because: {item.editorial_note}")
             ids_of_written.append(item.id)
 
 
@@ -355,7 +360,7 @@ class Routine:
         return output_dir
     
     def _markdown_metadata(self, title: str, subtitle: str, audio_filename: str, audio_filepath: str, audio_duration: str) -> str:
-        return dedent(
+        metadata = dedent(
             f"""
             ---
             layout: post
@@ -371,8 +376,7 @@ class Routine:
             version: "{get_version()}"
             ---
             """.strip())
-
-        #f'---\n\ntitle: \"{title_and_subtitle["title"]}\"\nsubtitle: \"{title_and_subtitle["subtitle"]}\"\naudio: {filename}.mp3\ndate: \n}\n---\n\n'
+        return '\n'.join(s.lstrip() for s in metadata.split('\n'))
 
     def do(self) -> None:
         self.start_time = time()
