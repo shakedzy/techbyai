@@ -1,16 +1,16 @@
 ---
-            layout: post
-            title: "AI's Expanding Horizons: Investments and Innovations"
-            subtitle: "From Amazon's $4B Anthropic Boost to Mali's AI Education Leap"
-            audio: 2024-04-14-ais-expanding-horizons-investments-and-innovations.mp3
-            date: 2024-04-14
-            duration: "03:51"
-            bytes: 926061
-            model: gpt-4-turbo-preview
-            cost: 1.83
-            processing: "0:03:08.124163"
-            version: "0.0.4"
-            ---
+layout: post
+title: "AI's Expanding Horizons: Investments and Innovations"
+subtitle: "From Amazon's $4B Anthropic Boost to Mali's AI Education Leap"
+audio: 2024-04-14-ais-expanding-horizons-investments-and-innovations.mp3
+date: 2024-04-14
+duration: "03:51"
+bytes: 926061
+model: gpt-4-turbo-preview
+cost: 1.83
+processing: "0:03:08.124163"
+version: "0.0.4"
+---
 
 # Amazon Invests $4B to Advance Generative AI Tech to Customers
 _Summarized by: Mia Wong_ [[aibusiness.com](https://aibusiness.com/companies/amazon-invests-4b-to-advance-generative-ai-tech-to-customers)]
