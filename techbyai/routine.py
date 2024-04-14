@@ -10,11 +10,10 @@ from datetime import datetime, timedelta
 from random import randint, shuffle
 from textwrap import dedent
 from concurrent.futures import ThreadPoolExecutor
-from . import __version__
 from .assistant import Assistant
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
-from .utils import flatten, ordinal_number, domain_of_url
+from .utils import flatten, ordinal_number, domain_of_url, get_version
 from .settings import Settings
 
 
@@ -369,7 +368,7 @@ class Routine:
             model: {Settings().llm.model}
             cost: {round(self.cost, 2)}
             processing: "{self._get_elapsed_time()}"
-            version: "{__version__}"
+            version: "{get_version()}"
             ---
             """.strip())
 

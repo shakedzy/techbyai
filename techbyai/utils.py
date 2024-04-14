@@ -42,3 +42,7 @@ def read_pdf(file_path: str) -> str:
         text = remove_page_numbers(text)
         texts.append(text)
     return " ".join(texts)
+
+
+def get_version() -> str:
+    return pkg_resources.get_distribution("techbyai").version
