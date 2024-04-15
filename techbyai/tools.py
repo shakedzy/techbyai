@@ -99,7 +99,8 @@ def new_ai_research_from_arxiv() -> str:
     """
     try:
         search = arxiv.Search(
-            query = "cs.AI"
+            query="cs.AI",
+            sort_by=arxiv.SortCriterion.SubmittedDate
         )
         results = arxiv.Client().results(search)
         now = datetime.now().date()
