@@ -36,7 +36,7 @@ class Routine:
             topics_list.append(f"Companies such as: {' '.join(companies)}")
         if people:
             shuffle(people)
-            topics_list.append(f"News, projects and interesting social-media posts (Twitter/X, LinkedIn..) coming from top-minds like these: {' '.join(people)}")
+            topics_list.append(f"News, projects and interesting tweets coming from top-minds like these: {' '.join(people)}")
         shuffle(topics_list)
         return ", ".join(topics_list)
 
