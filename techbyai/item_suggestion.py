@@ -9,7 +9,6 @@ class ItemSuggestion:
     rank: int = -1
     similar_ids: list[str] = field(default_factory=list)
     text: str = ""
-    editorial_note: str = ""
 
     @property
     def id(self) -> str:
