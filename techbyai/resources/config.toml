@@ -29,7 +29,6 @@ max_words_per_item = 150
 subject = "tech and AI"
 topics = [
         "Foundation Models", 
-        "AI Ethics and Bias",
         "Uses of Generative AI", 
         "AI Regulation and Policy", 
         "AI and Cybersecurity", 
