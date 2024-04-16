@@ -143,6 +143,6 @@ def arxiv_paper(paper_id: str) -> str:
 tools_params_definitions: ToolsDefType = {
     web_search: [("query", {"type": "string", "description": "The query to search on the web"}, True)],
     visit_website: [("url", {"type": "string", "description": "The URL of the page to scrape"}, True)],
-    new_ai_research_from_arxiv: [],
-    arxiv_paper: [("paper_id", {"type": "string", "description": "arXiv ID of the requested paper"}, True)]
+    # new_ai_research_from_arxiv: [],
+    # arxiv_paper: [("paper_id", {"type": "string", "description": "arXiv ID of the requested paper"}, True)]
 }
