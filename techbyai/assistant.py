@@ -75,6 +75,7 @@ class Assistant:
             )
             assistant_message = completion.choices[0].message
             messages.append(assistant_message)  # type: ignore
+            self._compute_cost(completion)
             
             if assistant_message.tool_calls:
                 for tool_call in assistant_message.tool_calls:

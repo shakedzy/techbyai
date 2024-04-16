@@ -1,13 +1,11 @@
 class Cost:
     _instance = None
+    _cost = 0.0
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(Cost, cls).__new__(cls)
         return cls._instance
-
-    def __init__(self) -> None:
-        self._cost = 0.0
 
     def __str__(self) -> str:
         return str(self._cost)

@@ -146,7 +146,7 @@ class Routine:
             ```
             Guidelines:
             - Never rank two items which are considered similar! Choose your favorite, list the rest under the `similar` list.
-            - Verify the article and its content are from the past 2 days - do NOT rank article which discuss old news or topics!
+            - You MUST READ the article, and VERIFY it refers to events, news or updates from the past 2 days - do NOT rank article which discuss older news or topics!
             - Your one-sentence explanation is directed to the readers, write it as if your talking to them directly (use second-body if needed)
             - REFRAIN from having promotional content on your magazine. 
               If you're using content shared by the same company or person who created it, make sure it actually professionally valuable, and simply self-endorsing.
