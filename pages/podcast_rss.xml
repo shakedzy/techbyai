@@ -25,7 +25,7 @@ xmlns:rawvoice="http://www.rawvoice.com/rawvoiceRssModule/"
 <itunes:summary>{{ site.description }}</itunes:summary>
 <itunes:author>{{ site.author }}</itunes:author>
 <itunes:explicit>no</itunes:explicit>
-<itunes:image href="https://raw.githubusercontent.com/shakedzy/techbyai/gh-pages/images/byai_720.png" />
+<itunes:image href="{{ '/images/byai_orange_720.png' | relative_url }}" />
 <itunes:owner>
 <itunes:name>{{ site.author }}</itunes:name>
 <itunes:email>{{ site.email }}</itunes:email>
@@ -60,7 +60,7 @@ xmlns:rawvoice="http://www.rawvoice.com/rawvoiceRssModule/"
         <![CDATA[Read all summaries including other headlines on: {{ site.url }}{{ site.baseurl }}{{ ep.url }}]]>
     </itunes:summary>
     <itunes:author>{{ site.author }}</itunes:author>
-    <itunes:image href="https://raw.githubusercontent.com/shakedzy/techbyai/gh-pages/images/byai_720.png" />
+    <itunes:image href="{{ '/images/byai_orange_720.png' | relative_url }}" />
     <itunes:explicit>no</itunes:explicit>
     <itunes:duration>{{ ep.duration }}</itunes:duration>
   </item>
