@@ -1,6 +1,7 @@
 import re
 import os
 import pathlib
+import pandas as pd
 from time import time
 from datetime import datetime, timedelta
 from random import randint, shuffle
@@ -9,10 +10,11 @@ from concurrent.futures import ThreadPoolExecutor
 from .assistant import Assistant
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
-from .utils import flatten, domain_of_url, get_version, path_to_resource
+from .utils import flatten, domain_of_url, get_version
 from .settings import Settings
 from .cost import Cost
 from .audio import Narrator
+from .archive import Archive, Embedder
 
 
 class Routine:
@@ -23,6 +25,7 @@ class Routine:
         self.start_time = time()
         self.cost = Cost()
         self.narrator = Narrator()
+        self.archive = Archive()
 
     @property
     def topics(self) -> str:
@@ -39,7 +42,7 @@ class Routine:
         return ", ".join(topics_list)
 
     def _hire_editor(self) -> Assistant:
-        assistant = Assistant(definition="You are a creative AI assistant", name='')
+        assistant = Assistant(definition="You are a creative AI assistant", name='', archive=self.archive)
         task = dedent(
             f"""
             I need to hire an Editor-in-Chief for a daily {Settings().editorial.subject} magazine. Think of 4 different types
@@ -62,7 +65,7 @@ class Routine:
         selected_editor = possible_editors[randint(0,3)]
         self.logger.debug(f"Selected editor: {selected_editor['name']} - {selected_editor['definition']}")
         editor_def = f"You are the Editor-in-Chief of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {selected_editor['definition']}"
-        return Assistant(definition=editor_def, name=selected_editor['name'])
+        return Assistant(definition=editor_def, name=selected_editor['name'], archive=self.archive)
     
     def _hire_reporters(self) -> list[Assistant]:
         task = dedent(
@@ -78,7 +81,7 @@ class Routine:
         self.logger.debug(result.content)
         reporters = []
         for name, description in list(result.json.items())[:Settings().editorial.reporters]:
-            reporters.append(Assistant(description, name=name))
+            reporters.append(Assistant(f"You are a reporter of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}", name=name, archive=self.archive))
         return reporters
     
     def _research(self) -> list[list[ItemSuggestion]]:
@@ -137,7 +140,8 @@ class Routine:
             your chosen rank and a list of similar item IDs to that item, if any. 
             See the example below:
             ```json
-            {{"ITEM_ID": 
+            {{
+                "ITEM_ID": 
                 {{
                     "rank": int_value,
                     "similar": ["ID_OF_SIMILAR_ITEMS", ...]  // keep empty if none
@@ -158,7 +162,38 @@ class Routine:
         result = self.editor.do(task, as_json=True)
         self.logger.debug(result.content)
         ranking = result.json
+        conversation = [
+            {"role": "user", "content": task},
+            {"role": "assistant", "content": result.content}
+        ]
+
+        second_task = dedent(
+            """
+            Verify the items you chose - or too similar ones - did not already appear on previous issues of the magazine, as this might cause the readers to frown upon your 
+            magazine, believing it is unprofessional.
+            You can query the magazine archive in order to find older articles.
+            For every item in the list you ranked, you now have the following options:
+            - If you found it is a duplicate or overly similar to a previous article in the magazine, you can choose to remove it from today's issue
+            - If you found similar entries in previous issues, but still believe it should be featured in today's issue (perhaps because of a development on the issue or for any other reason you choose), keep it and link it to the older articles
+            - If you found no similar articles or entries in the archive, leave the item as it is
+            Return your decision in the following JSON format:
+            ```json
+            {
+                "ITEM_ID":
+                {
+                    "remove": boolean,  // whether to remove this item or not
+                    "archive": ["TITLE_OF_LINKED_ITEM_FROM_ARCHIVE", ...]  // keep empty if none 
+                }
+            }
+            ```
+            """.strip())
+        result = self.editor.do(second_task, as_json=True, conversation=conversation)
+        self.logger.debug(result.content)
+        remaining = result.json 
+
         for s_id, dct in ranking.items():
+            if remaining.get(s_id, {}).get('remove', False):
+                continue
             indices = list(range(len(suggestions)))
             shuffle(indices)
             for i in indices:
@@ -169,6 +204,7 @@ class Routine:
                     suggestion = reporter_suggestions[idx]
                     suggestion.rank = int(dct['rank'])
                     suggestion.similar_ids = dct.get('similar', [])
+                    suggestion.previous_titles = remaining.get(s_id, {}).get('archive', [])
                     reporter_suggestions[idx] = suggestion
                     break
         return suggestions
@@ -285,8 +321,16 @@ class Routine:
                 if similar_items:
                     similar_items = ["\n> **See also:**"] + similar_items
                 similar_text = '\n'.join(similar_items)
+                previous_titles = []
+                for title in item.previous_titles:
+                    series = self.archive.get_by_title(title)
+                    if not series.empty:
+                        previous_titles.append(f" * [{series['title']}](" + "{{ " + series['page'].replace('-', '/', 3) + " | relative_url }}" + f") {series['date']}")
+                if previous_titles:
+                    previous_titles = (["\n<blockquote class='previous-titles' markdown='1'>\n**Previous headlines:**\n"] + previous_titles + ["</blockquote>"])
+                previous_titles_text = '\n'.join(previous_titles)
                 domain = domain_of_url(item.url)
-                md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{domain}]({item.url})]{similar_text}\n\n{item.text}")
+                md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{domain}]({item.url})]{previous_titles_text}{similar_text}\n\n{item.text}")
             ids_of_written.append(item.id)
 
 
@@ -322,6 +366,23 @@ class Routine:
             ---
             """.strip())
         return '\n'.join(s.lstrip() for s in metadata.split('\n'))
+    
+    def _create_embeddings_file(self, items: list[ItemSuggestion], filename: str, item_type: str) -> None:
+        rows: list[dict] = []
+        date = datetime.now().strftime("%Y-%m-%d")
+        ranked_items = sorted([item for item in items if item.rank > 0], key=lambda s: s.rank)
+        embeddings = Embedder().generate_embeddings([item.text for item in ranked_items])
+        for i, item in enumerate(ranked_items):
+            rows.append({
+                'date': date,
+                'page': filename,
+                'title': item.title,
+                'url': item.url,
+                'text': item.text,
+                'type': item_type,
+                'embedding': embeddings[i]
+            })
+        pd.DataFrame(rows).to_csv(os.path.join(self.output_dir, f'{filename}.csv'), header=True, index=False)
 
     def do(self) -> None:
         self.cost.reset()
@@ -350,6 +411,9 @@ class Routine:
 
         alphanumeric_title = re.sub(r'[^A-Za-z0-9 ]+', '', title_and_subtitle["title"])
         filename = f'{datetime.now().strftime("%Y-%m-%d")}-{alphanumeric_title.lower().replace(" ","-")}'
+
+        self.logger.info(f"Creating embeddings [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
+        self._create_embeddings_file(items, filename, item_type='daily_ai_summary')
 
         self.logger.info(f"Narrating [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
         recording_filepath = os.path.join(self.output_dir, filename+'.mp3')

@@ -22,14 +22,3 @@ news by themselves, with no human intervention what-so-ever.
 
 As the content is completely AI-generated, it should be treated as such. Take everything with a grain of salt, double-check 
 facts and don't be offended. Enjoy!
-
-## 🎯 Roadmap
-- Podcast:
-    - [ ] Generate podcast episode covers
-    - [ ] Generate podcast episode description
-    - [ ] Add podcast to other platforms
-- Additional summaries:
-    - [ ] Arxiv weekly summary
-    - [ ] Daily tweets summary
-- Capabilities:
-    - [ ] Allow searching in and comparing to previous summaries

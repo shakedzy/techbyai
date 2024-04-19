@@ -1,7 +1,8 @@
-from typing import Literal, TypeAlias, Dict, Callable, List, Tuple, Any
+from typing import Literal, TypeAlias, Callable, Any
 
 
-ToolsDefType: TypeAlias = Dict[Callable, List[Tuple[str, Dict[str, Any], bool]]]
+Embedding: TypeAlias = list[float]
+ToolsDefType: TypeAlias = dict[Callable, list[tuple[str, dict[str, Any], bool]]]
 
 Color: TypeAlias = Literal[
     "red",

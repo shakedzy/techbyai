@@ -9,6 +9,7 @@ from googleapiclient.discovery import build
 from .color_logger import get_logger
 from .settings import Settings
 from .utils import read_pdf
+from .archive import Archive
 from ._types import ToolsDefType
 
 
@@ -137,12 +138,31 @@ def arxiv_paper(paper_id: str) -> str:
         return f"ERROR: {e}"
 
 
+def query_magazine_archive(query: str, archive: Archive) -> str:
+    """
+    Return a the title, URL, date of publish and text of the top 3 articles from the magazine's archive which
+    match the query.
+
+    Example:
+    TITLE: Decoding Foundation Models the Building Blocks of AI
+    URL: https://blogs.nvidia.com/blog/ai-decoded-foundation-models/
+    DATE: 2024-04-11
+    In a recent NVIDIA blog post, the pivotal role of foundation models in AI was highlighted...
+
+    results are separated by: =====
+    """
+    top_results = archive.query(query, 3)
+    output: list[str] = []
+    for _, row in top_results.iterrows():
+        output.append(f"TITLE: {row['title']}\nURL: {row['url']}\nDATE: {row['date']}\n{row['text']}")
+    return "\n=====\n".join(output)
+
+
 #######
 
             
 tools_params_definitions: ToolsDefType = {
     web_search: [("query", {"type": "string", "description": "The query to search on the web"}, True)],
     visit_website: [("url", {"type": "string", "description": "The URL of the page to scrape"}, True)],
-    # new_ai_research_from_arxiv: [],
-    # arxiv_paper: [("paper_id", {"type": "string", "description": "arXiv ID of the requested paper"}, True)]
+    query_magazine_archive: [("query", {"type": "string", "description": "The query to search in the archive magazine"}, True)]
 }

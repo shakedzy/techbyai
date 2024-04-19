@@ -46,7 +46,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            f'run_routine = {PACKAGE_NAME}:main'
+            f'run_routine = {PACKAGE_NAME}._cli:run'
         ]
     }
 )

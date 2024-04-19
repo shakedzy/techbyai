@@ -2,13 +2,14 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from openai import OpenAI
-from openai.types.chat import ChatCompletion, ChatCompletionMessage
+from openai.types.chat import ChatCompletion
 from openai._types import NOT_GIVEN
 from typing import Any
 from .cost import Cost
 from .settings import Settings
 from .tools import tools_params_definitions
 from .color_logger import get_logger
+from .archive import Archive
 
 
 @dataclass
@@ -18,7 +19,7 @@ class AssistantResponse:
 
 
 class Assistant:
-    def __init__(self, definition: str, name: str) -> None:
+    def __init__(self, definition: str, *, name: str, archive: Archive) -> None:
         self.client = OpenAI()
         self.definition = definition
         self.name = name
@@ -26,6 +27,7 @@ class Assistant:
         self.callables = {f.__name__: f for f in tools_params_definitions.keys()}
         self.logger = get_logger()
         self.cost = Cost()
+        self.archive = archive
 
     def _build_tools(self) -> list[dict[str, Any]]:
         tools = list()
@@ -57,10 +59,11 @@ class Assistant:
         current_cost = (prompt_tokens * Settings().llm.input_costs_per_mill + output_tokens * Settings().llm.output_costs_per_mill) / 1e6
         self.cost += current_cost
     
-    def do(self, task: str, as_json: bool = False) -> AssistantResponse:
-        system_prompt = f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is '+self.name if self.name else ''}]\n{self.definition}"
-        messages: list[dict[str, str] | ChatCompletionMessage] = [
-            {"role": "system", "content": system_prompt},
+    def do(self, task: str, *, as_json: bool = False, conversation: list[dict[str, str]] = []) -> AssistantResponse:
+        system_prompt = f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is ' + self.name if self.name else ''}]\n{self.definition}"
+        messages: list[dict[str, str]] = [
+            {"role": "system", "content": system_prompt}
+            ] + conversation + [
             {"role": "user", "content": task}
         ]
 
@@ -86,6 +89,8 @@ class Assistant:
                         tool_result = "There's no such tool names `multi_tool_use.parallel`, use the correct syntax to call multiple tools!"
                     else:
                         arguments = json.loads(tool_call.function.arguments)
+                        if tool_name == 'query_magazine_archive':
+                            arguments['archive'] = self.archive
                         self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
                         tool_result = self.callables[tool_name](**arguments)
                         if tool_name == 'web_search':
