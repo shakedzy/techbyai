@@ -291,6 +291,8 @@ class Routine:
         return result.json
     
     def _write_markdown_article(self, items: list[ItemSuggestion]) -> str:
+        remove_pipes = lambda s: s.replace(" | ", " ").replace("|", " ")
+
         items = sorted(items, key=lambda s: s.rank if s.rank > 0 else 999)
         md_ranked_articles = []
         md_unranked_articles = []
@@ -306,7 +308,7 @@ class Routine:
                     if u.endswith("/"): 
                         u = u[:-1]
                     if u != domain_of_url(item.url):
-                        md_unranked_articles.append(f'* [{item.title.replace(" | ", " ").replace("|", " ")}]({item.url})')
+                        md_unranked_articles.append(f'* [{remove_pipes(item.title)}]({item.url})')
             else:
                 similar_items = []
                 for s_id in item.similar_ids:
@@ -316,7 +318,7 @@ class Routine:
                     sim = sim_list[0]
                     if domain_of_url(sim.url) == domain_of_url(item.url):
                         continue
-                    similar_items.append(f'> * [{sim.title.replace(" | ", " ").replace("|", " ")}]({sim.url}) ({domain_of_url(sim.url)})')
+                    similar_items.append(f'> * [{remove_pipes(sim.title)}]({sim.url}) ({domain_of_url(sim.url)})')
                     ids_of_written.append(sim.id)
                 if similar_items:
                     similar_items = ["\n> **See also:**"] + similar_items
@@ -325,9 +327,10 @@ class Routine:
                 for title in item.previous_titles:
                     series = self.archive.get_by_title(title)
                     if not series.empty:
-                        previous_titles.append(f" * [{series['title']}](" + "{{ " + series['page'].replace('-', '/', 3) + " | relative_url }}" + f") {series['date']}")
+                        previous_titles.append(f" * [{remove_pipes(series['title'])}](" + "{{ '" + series['page'].replace('-', '/', 3) + "' | relative_url }}" + f") {series['date']}")
                 if previous_titles:
-                    previous_titles = (["\n<blockquote class='previous-titles' markdown='1'>\n**Previous headlines:**\n"] + previous_titles + ["</blockquote>"])
+                    remove_margin = "style='margin-bottom: 0;'"
+                    previous_titles = ([f"\n<blockquote class='previous-titles' markdown='1' {remove_margin if similar_items else ''}>\n**Previous headlines:**\n"] + previous_titles + ["</blockquote>"])
                 previous_titles_text = '\n'.join(previous_titles)
                 domain = domain_of_url(item.url)
                 md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{domain}]({item.url})]{previous_titles_text}{similar_text}\n\n{item.text}")
