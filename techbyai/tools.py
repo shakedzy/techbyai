@@ -4,12 +4,14 @@ import json
 import arxiv
 import inspect
 import requests
+from time import sleep
 from datetime import datetime, timedelta
+from selenium import webdriver
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
 from .color_logger import get_logger
 from .settings import Settings
-from .utils import read_pdf
+from .utils import read_pdf, domain_of_url
 from .archive import Archive
 from ._types import ToolsDefType
 
@@ -49,8 +51,8 @@ def web_search(query: str) -> str:
             ).execute()
         
         if 'items' not in response:
-            get_logger().warn(f'No items in response! {response}', color='red')
-            raise RuntimeError("Got malformed response!")
+            get_logger().debug(f'Query {query} yielded no results!')
+            return "No results"
         
         for result in response['items']:
             results.append((result['title'], result['link'], result['snippet']))
@@ -86,6 +88,33 @@ def visit_website(url: str) -> str:
             raise RuntimeError(f"ERROR: Failed to retrieve the webpage. Status code: {response.status_code}")
     except Exception as e:
         handle_tool_error(e)
+        return f"ERROR: {e}"
+    
+
+def get_tweet_text(url: str) -> str:
+    """
+    Takes a URL of a tweet from Twitter and returns a simple raw version of the text. All media types are excluded.
+    """
+    try:
+        url = url.replace(domain_of_url(url), 'nitter.poast.org')
+        options = webdriver.ChromeOptions()
+        options.add_argument(f'user-agent={Settings().web.user_agent}')
+        driver = webdriver.Chrome(options=options)
+        driver.get(url)
+        sleep(15)
+        html_content = driver.page_source
+        driver.quit()
+
+        soup = BeautifulSoup(html_content, 'html.parser')
+        text = soup.get_text()
+
+        # Clean whitespaces
+        text = re.sub(pattern=r'[ \t]+', repl=' ', string=text)  # Replace multiple spaces and tabs with a single space
+        text = re.sub(pattern=r'\n{3,}', repl='\n\n', string=text)  # Replace more than two newlines with two newlines
+        text = text.strip()
+
+        return text 
+    except Exception as e:
         return f"ERROR: {e}"
 
 
@@ -169,6 +198,7 @@ def query_magazine_archive(query: str, archive: Archive) -> str:
             
 tools_params_definitions: ToolsDefType = {
     web_search: [("query", {"type": "string", "description": "The query to search on the web"}, True)],
-    visit_website: [("url", {"type": "string", "description": "The URL of the page to scrape"}, True)],
+    visit_website: [("url", {"type": "string", "description": "The URL of the page to visit"}, True)],
+    get_tweet_text: [("url", {"type": "string", "description": "The full URL of the tweet on Twitter to read"}, True)],
     query_magazine_archive: [("query", {"type": "string", "description": "The query to search in the archive magazine"}, True)]
 }

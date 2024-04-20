@@ -15,6 +15,7 @@ from .settings import Settings
 from .cost import Cost
 from .audio import Narrator
 from .archive import Archive, Embedder
+from .tools import get_tweet_text
 
 
 class Routine:
@@ -128,12 +129,22 @@ class Routine:
             - Do NOT choose broad topics (i.e. "Ethics and Bias in AI", "Advancements in Natural Language Processing", and things like that)! Choose very 
               specific subjects (a new model, a new breakthrough, etc.) Prefer less topics than broad topics!
             - You have access to Twitter via the web search tool, simply append the string 'site:twitter.com' at the end of the query
+            - DO NOT, and I repeat - DO NOT use tweets of random users, as they might be spam. Only refer to tweets posted by the people on your list!!
             - Be creative in your search, look up hashtags and other Twitter specific terms
             ```
             """.strip())
         result = self.twitter_analyst.do(second_task, as_json=True)
         self.logger.debug(result.content)
-        return result.json
+        trends_and_urls = result.json
+        for trend, urls in trends_and_urls.items():
+            with ThreadPoolExecutor() as executor:
+                futures = [executor.submit(get_tweet_text, url) for url in urls]
+            removed = ["Tweet not found" in f.result() for f in futures]
+            remaining_urls = [u for u,r in zip(urls, removed) if not r]
+            trends_and_urls[trend] = remaining_urls
+        trends_and_urls = {t: u for t,u in trends_and_urls.items() if u}
+        self.logger.debug(f"Remaining trends and URLs: {str(trends_and_urls)}")
+        return trends_and_urls
     
     def _research(self, twitter_trends: list[str]) -> list[list[ItemSuggestion]]:
         editor_task = dedent(
