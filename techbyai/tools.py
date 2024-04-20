@@ -193,6 +193,7 @@ def query_magazine_archive(query: str, archive: Archive) -> str:
             })
     return json.dumps(output)
 
+
 #######
 
             
