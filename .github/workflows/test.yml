@@ -16,4 +16,8 @@ jobs:
             ref: 'gh-pages'  
             path: 'gh-pages'
         - name: Echo
-          run: echo "$(pwd)/gh-pages/embeddings"
+          run: |
+            echo "$(pwd)/gh-pages/embeddings";
+            ls ;
+            ls ..;
+
