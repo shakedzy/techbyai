@@ -1,5 +1,6 @@
 import re
 import os
+import json
 import arxiv
 import inspect
 import requests
@@ -46,6 +47,11 @@ def web_search(query: str) -> str:
             num=MAX_RESULTS,
             dateRestrict=f'd{Settings().search.past_days}'
             ).execute()
+        
+        if 'items' not in response:
+            get_logger().warn(f'No items in response! {response}', color='red')
+            raise RuntimeError("Got malformed response!")
+        
         for result in response['items']:
             results.append((result['title'], result['link'], result['snippet']))
 
@@ -141,22 +147,22 @@ def arxiv_paper(paper_id: str) -> str:
 def query_magazine_archive(query: str, archive: Archive) -> str:
     """
     Return a the title, URL, date of publish and text of the top 3 articles from the magazine's archive which
-    match the query.
-
-    Example:
-    TITLE: Decoding Foundation Models the Building Blocks of AI
-    URL: https://blogs.nvidia.com/blog/ai-decoded-foundation-models/
-    DATE: 2024-04-11
-    In a recent NVIDIA blog post, the pivotal role of foundation models in AI was highlighted...
-
-    results are separated by: =====
+    match the query. 
+    Results are returned in JSON format.
     """
     top_results = archive.query(query, 3)
-    output: list[str] = []
+    if top_results.empty:
+        return "No results"
+    
+    output: list[dict[str, str]] = []
     for _, row in top_results.iterrows():
-        output.append(f"TITLE: {row['title']}\nURL: {row['url']}\nDATE: {row['date']}\n{row['text']}")
-    return "\n=====\n".join(output)
-
+        output.append({
+            'title': row['title'], 
+            'url': row['url'],
+            'date': row['date'],
+            'text': row['text']
+            })
+    return json.dumps(output)
 
 #######
 

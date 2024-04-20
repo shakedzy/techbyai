@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
@@ -16,6 +16,7 @@ from .archive import Archive
 class AssistantResponse:
     content: str
     json: dict[str, Any]
+    conversation: list = field(default_factory=list)
 
 
 class Assistant:
@@ -59,9 +60,9 @@ class Assistant:
         current_cost = (prompt_tokens * Settings().llm.input_costs_per_mill + output_tokens * Settings().llm.output_costs_per_mill) / 1e6
         self.cost += current_cost
     
-    def do(self, task: str, *, as_json: bool = False, conversation: list[dict[str, str]] = []) -> AssistantResponse:
+    def do(self, task: str, *, as_json: bool = False, conversation: list = []) -> AssistantResponse:
         system_prompt = f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is ' + self.name if self.name else ''}]\n{self.definition}"
-        messages: list[dict[str, str]] = [
+        messages = [
             {"role": "system", "content": system_prompt}
             ] + conversation + [
             {"role": "user", "content": task}
@@ -115,6 +116,7 @@ class Assistant:
                 content = messages[-1].content  # type: ignore
                 content_json = {}
                 final_message = True
-
-        return AssistantResponse(content=content, json=content_json)
+        
+        messages.pop(0)  # remove system prompt
+        return AssistantResponse(content=content, json=content_json, conversation=messages)
     

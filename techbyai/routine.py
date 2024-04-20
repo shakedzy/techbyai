@@ -20,6 +20,7 @@ from .archive import Archive, Embedder
 class Routine:
     def __init__(self) -> None:
         self.editor: Assistant
+        self.twitter_analyst: Assistant
         self.reporters: list[Assistant] = []
         self.logger = get_logger()
         self.start_time = time()
@@ -27,17 +28,15 @@ class Routine:
         self.narrator = Narrator()
         self.archive = Archive()
 
-    @property
-    def topics(self) -> str:
+    def topics(self, twitter_trends: list[str]) -> str:
         companies: list[str] = Settings().editorial.companies
-        people: list[str] = Settings().editorial.people
         topics_list: list[str] = Settings().editorial.topics
         if companies:
             shuffle(companies)
-            topics_list.append(f"Companies such as: {' '.join(companies)}")
-        if people:
-            shuffle(people)
-            topics_list.append(f"News, projects and interesting tweets coming from top-minds like these: {' '.join(people)}")
+            topics_list.append(f"Companies such as: {', '.join(companies)}")
+        if twitter_trends:
+            shuffle(twitter_trends)
+            topics_list.append(f"These trending topics on Twitter: {', '.join(twitter_trends)}")
         shuffle(topics_list)
         return ", ".join(topics_list)
 
@@ -57,6 +56,7 @@ class Routine:
             ```json
             {{"John Smith": "You are a ..."}}
             ```
+            Be creative with the names you choose, don't go with your default ones!
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
             """.strip())
         result = assistant.do(task, as_json=True)
@@ -67,14 +67,15 @@ class Routine:
         editor_def = f"You are the Editor-in-Chief of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {selected_editor['definition']}"
         return Assistant(definition=editor_def, name=selected_editor['name'], archive=self.archive)
     
-    def _hire_reporters(self) -> list[Assistant]:
+    def _hire_reporters(self) -> tuple[list[Assistant], Assistant]:
         task = dedent(
             f"""
             You must hire {Settings().editorial.reporters} reporters to research, choose and write the articles
             for today's issue about the latest news and trends in {Settings().editorial.subject}. 
-            Describe each of the {Settings().editorial.reporters} individuals you hire for this task.
+            Describe each of the {Settings().editorial.reporters} individuals you hire for this task. 
             Your response should be a JSON, where the keys are the names of the reporters (which you generate),
             and the values are their characteristics description.
+            Be creative with the names you choose, don't go with your default ones!
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
             """.strip())
         result = self.editor.do(task, as_json=True)
@@ -82,14 +83,64 @@ class Routine:
         reporters = []
         for name, description in list(result.json.items())[:Settings().editorial.reporters]:
             reporters.append(Assistant(f"You are a reporter of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}", name=name, archive=self.archive))
-        return reporters
+        
+        second_task = dedent(
+            f"""
+            You must hire a single Twitter savvy as part of your staff. This person is an analyst, the one who knows how to find the most interesting and trending information on Twitter,
+            and do research for topics to write about.
+            Describe this individual. 
+            Your response should be a JSON, where the keys are the names of the reporters (which you generate),
+            and the values are their characteristics description. The name should be different than the names of your other reporters: {list(result.json.keys())}.
+            IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
+            """.strip())
+        result = self.editor.do(second_task, as_json=True)
+        self.logger.debug(result.content)
+        for name, description in list(result.json.items())[:1]:
+            twitter_savvy = Assistant(f"You are a Twitter analyst, working for a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}", name=name, archive=self.archive)
+        return reporters, twitter_savvy
     
-    def _research(self) -> list[list[ItemSuggestion]]:
+    def _twitter_analysis(self) -> dict[str, list[str]]:
+        initial_task = dedent(
+            f"""
+            Come up with a list of people and influencers in the fields of {Settings().editorial.subject} which should be followed on Twitter.
+            Return your list as a JSON, of the following format:
+            ```json
+            {{"people": ["FULL NAME",...]}}
+            ```
+            """.strip())
+        result = self.twitter_analyst.do(initial_task, as_json=True)
+        self.logger.debug(result.content)
+        people: list[str] = result.json.get("people", []) + Settings().editorial.people
+        people = list(set(people))
+
+        second_task = dedent(
+            f"""
+            Search on Twitter for the most interesting and trending topics these people and influencers discuss in the fields of {Settings().editorial.subject}:
+            {people}
+            Choose up to {Settings().editorial.reporter_items} topics based on their tweets, along with 1-2 tweets per topic (the best ones by your opinion), 
+            and return your decision as a JSON in the following format:
+            ```json
+            {{
+                "SPECIFIC_TOPIC": ["TWEET_URL", ...],  // this should be a list of tweets by some of the people mentioned above about this topic
+                ...
+            }}
+            IMPORTANT: 
+            - Do NOT choose broad topics (i.e. "Ethics and Bias in AI", "Advancements in Natural Language Processing", and things like that)! Choose very 
+              specific subjects (a new model, a new breakthrough, etc.) Prefer less topics than broad topics!
+            - You have access to Twitter via the web search tool, simply append the string 'site:twitter.com' at the end of the query
+            - Be creative in your search, look up hashtags and other Twitter specific terms
+            ```
+            """.strip())
+        result = self.twitter_analyst.do(second_task, as_json=True)
+        self.logger.debug(result.content)
+        return result.json
+    
+    def _research(self, twitter_trends: list[str]) -> list[list[ItemSuggestion]]:
         editor_task = dedent(
             f"""
             Brief your staff about the type of news you'd like them to look for for today's issue.
             Explain to them what you're expecting of them. Here are some example topics:
-            {self.topics}
+            {self.topics(twitter_trends)}
             Feel free to edit, add or remove topics as you wish. You may also look on the web for new ideas.
             Reply as if you speak to your reporters directly.
             """)
@@ -105,13 +156,14 @@ class Routine:
             - Make sure the URL you provide direct to the exact article you chose (and not to a some news aggregation). Search for the specific URL of the article if needed
             - Your response should be formatted as JSON, where the items titles (meaning: the titles of the 
               articles you read) are the keys, and the values are the items URLs.
-              Example:
+            Example:
             ```json
             {{"OpenAI's Sora text-to-video generator will be publicly available later this year": "https://www.theverge.com/2024/3/13/24099402/openai-text-to-video-ai-sora-public-availability"}}
             ```
             REMEMBER: You are competing with the rest of the staff on finding the most interesting items, so be
             creative in your searches, don't just copy paste the editor's instructions!
             """.strip())
+        guidelines = '\n'.join(s.lstrip() for s in guidelines.split('\n'))
         reporters_task = editor_response.content + '\n' + guidelines
         self.logger.debug(reporters_task)
         with ThreadPoolExecutor() as executor:
@@ -150,8 +202,6 @@ class Routine:
             ```
             Guidelines:
             - Never rank two items which are considered similar! Choose your favorite, list the rest under the `similar` list.
-            - You MUST READ the articles you choose, and VERIFY they refer to events, news or updates from the past 2 days - do NOT rank article which discuss older news or topics!
-              Remember that even if an article was published in the last 2 days, doesn't mean it refers to news from the last 2 days!
             - REFRAIN from having promotional content on your magazine. 
               If you're using content shared by the same company or person who created it, make sure it actually professionally valuable, and simply self-endorsing.
               Verify the article really has valuable information which will enrich the readers!
@@ -162,10 +212,6 @@ class Routine:
         result = self.editor.do(task, as_json=True)
         self.logger.debug(result.content)
         ranking = result.json
-        conversation = [
-            {"role": "user", "content": task},
-            {"role": "assistant", "content": result.content}
-        ]
 
         second_task = dedent(
             """
@@ -186,8 +232,9 @@ class Routine:
                 }
             }
             ```
+            Tip: Don't query just the title, try more than one query to be sure!
             """.strip())
-        result = self.editor.do(second_task, as_json=True, conversation=conversation)
+        result = self.editor.do(second_task, as_json=True, conversation=result.conversation)
         self.logger.debug(result.content)
         remaining = result.json 
 
@@ -290,7 +337,7 @@ class Routine:
         result = self.editor.do(task, as_json=True)
         return result.json
     
-    def _write_markdown_article(self, items: list[ItemSuggestion]) -> str:
+    def _write_markdown_article(self, items: list[ItemSuggestion], twitter_urls: list[str]) -> str:
         remove_pipes = lambda s: s.replace(" | ", " ").replace("|", " ")
 
         items = sorted(items, key=lambda s: s.rank if s.rank > 0 else 999)
@@ -340,7 +387,10 @@ class Routine:
         self.logger.info(f"Creating title for article [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
         
         self.logger.info(f"Creating title for article [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
-        full_article = '\n\n'.join(md_ranked_articles) + '\n\n**Other headlines:**\n' + '\n'.join(md_unranked_articles)
+        full_article = '\n\n'.join(md_ranked_articles)
+        if twitter_urls:
+            full_article += ('\n\n' + self._tweets_markdown(twitter_urls))
+        full_article += ('\n\n**Other headlines:**\n' + '\n'.join(md_unranked_articles))
         return full_article
 
     @property
@@ -387,6 +437,25 @@ class Routine:
             })
         pd.DataFrame(rows).to_csv(os.path.join(self.output_dir, f'{filename}.csv'), header=True, index=False)
 
+    def _tweets_markdown(self, tweets_urls: list[str]) -> str:
+        def embedded_tweet_html(url: str) -> str:
+            return dedent(
+                f"""
+                <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true">
+                    <a href="{url}"></a>
+                </blockquote>
+                """.strip())
+        
+        if tweets_urls:
+            htmls = [embedded_tweet_html(url) for url in tweets_urls]
+            htmls = ["## Trending on Twitter"] + htmls + ['<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>']
+            return '\n'.join(htmls)
+        else:
+            return ''
+
+    def _get_stats_string(self) -> str:
+        return f"[elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]"
+
     def do(self) -> None:
         self.cost.reset()
         self.start_time = time()
@@ -394,20 +463,25 @@ class Routine:
         self.logger.info("Starting - Hiring editor", color='green')
         self.editor =  self._hire_editor()
         
-        self.logger.info(f"Hiring staff [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
-        self.reporters = self._hire_reporters()
+        self.logger.info(f"Hiring staff {self._get_stats_string()}", color='green')
+        self.reporters, self.twitter_analyst = self._hire_reporters()
         
-        self.logger.info(f"Performing research [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
-        suggestions = self._research() 
+        self.logger.info(f"Performing Twitter trends analysis {self._get_stats_string()}", color='green')
+        twitter_trends_and_links: dict[str, list[str]] = self._twitter_analysis()
+        twitter_trends = list(twitter_trends_and_links.keys())
+        twitter_urls = flatten([v for _, v in twitter_trends_and_links.items()])
 
-        self.logger.info(f"Selecting top items [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
+        self.logger.info(f"Performing research {self._get_stats_string()}", color='green')
+        suggestions = self._research(twitter_trends) 
+
+        self.logger.info(f"Selecting top items {self._get_stats_string()}", color='green')
         suggestions = self._select_items(suggestions) 
         
-        self.logger.info(f"Writing articles [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
+        self.logger.info(f"Writing articles {self._get_stats_string()}", color='green')
         items = flatten(self._write_items(suggestions))
         
-        self.logger.info(f"Composing article [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
-        full_article = self._write_markdown_article(items)
+        self.logger.info(f"Composing article {self._get_stats_string()}", color='green')
+        full_article = self._write_markdown_article(items, twitter_urls)
         title_and_subtitle = self._create_title_and_subtitle(full_article)
         title_and_subtitle['title'] = title_and_subtitle['title'] or f'AI News: {datetime.now().strftime("%A, %d %B, %Y")}'
         title_and_subtitle['subtitle'] = title_and_subtitle['subtitle'] or "All the latest news about AI, brought to you by AI"
@@ -415,10 +489,10 @@ class Routine:
         alphanumeric_title = re.sub(r'[^A-Za-z0-9 ]+', '', title_and_subtitle["title"])
         filename = f'{datetime.now().strftime("%Y-%m-%d")}-{alphanumeric_title.lower().replace(" ","-")}'
 
-        self.logger.info(f"Creating embeddings [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
+        self.logger.info(f"Creating embeddings {self._get_stats_string()}", color='green')
         self._create_embeddings_file(items, filename, item_type='daily_ai_summary')
 
-        self.logger.info(f"Narrating [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
+        self.logger.info(f"Narrating {self._get_stats_string()}", color='green')
         recording_filepath = os.path.join(self.output_dir, filename+'.mp3')
         output_audio = self.narrator.narrate(items, title=title_and_subtitle['title'])
         length_seconds = int(len(output_audio) / 1000)
@@ -436,5 +510,5 @@ class Routine:
             f.write('\n\n'.join([f'{reporter.name}:\n\n```\n{reporter.definition}\n```' for reporter in self.reporters]))
             f.write("\n</div>\n</details>\n")
         
-        self.logger.info(f"Done. [total elapsed time: {self._get_elapsed_time()}, total cost: {self.cost()}$]", color='green')
+        self.logger.info(f"Done. {self._get_stats_string()}", color='green')
         

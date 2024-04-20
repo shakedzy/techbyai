@@ -26,11 +26,11 @@ cost_per_query = 0.005  # dollars
 
 [editorial]
 name = "Tech by AI"
-reporters = 2
+reporters = 3
 reporter_items = 5
 final_items = 7
 max_words_per_item = 150
-subject = "tech and AI"
+subject = "AI and Generative AI specifically"
 topics = [
         "Foundation Models", 
         "Uses of Generative AI", 
@@ -57,7 +57,10 @@ companies = [
         "Midjourney", 
         "Stability AI", 
         "Eleven Labs", 
-        "Hugging Face"
+        "Hugging Face",
+        "Apple",
+        "Ollama",
+        "GitHub"
         ]
 people = [
         "Aravind Srinivas", 

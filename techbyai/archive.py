@@ -1,3 +1,4 @@
+import re
 import numpy as np
 import pandas as pd
 from glob import glob
@@ -37,11 +38,28 @@ class Archive:
         dfs: list[pd.DataFrame] = list()
         for filename in glob(embeddings_dir + '*.csv'):
             dfs.append(pd.read_csv(filename, index_col=None, header=0))
-        self.logger.info(f"Found {len(dfs)} files in archive")
-        raise RuntimeError("XXX")
-        df = pd.concat(dfs, axis=0, ignore_index=True)
-        df['embedding'] = df['embedding'].apply(literal_eval)
-        return df
+        if len(dfs) > 0:
+            self.logger.debug(f"Found {len(dfs)} files in archive")
+            df = pd.concat(dfs, axis=0, ignore_index=True)
+            df['embedding'] = df['embedding'].apply(literal_eval)
+            df['searchable_title'] = df['title'].apply(self._get_searchable_title)
+            return df
+        else:
+            self.logger.warn("Found no files in archive directory!", color='red')
+            return pd.DataFrame()
+        
+    @property
+    def empty(self) -> bool:
+        return self.db.empty
+    
+    @staticmethod
+    def _get_searchable_title(title: str) -> str:
+        title = title.strip().replace('-', ' ')
+        title = re.sub(r'\s', ' ', title)
+        title = re.sub(r' +', ' ', title)
+        title = re.sub(r'[^A-Za-z0-9 ]+', '', title)
+        title = title.lower()
+        return title
 
     @staticmethod
     def cosine_similarity(vector: Embedding, matrix: list[Embedding]) -> NDArray:
@@ -68,13 +86,17 @@ class Archive:
         return top_indices
 
     def query(self, query: str, max_results: int) -> pd.DataFrame:
+        if self.empty:
+            return pd.DataFrame()
         query_embedding = self.embedder.generate_embeddings([query])[0]
         embeddings = list(self.db['embedding'].to_list())
         top_indices = self.top_indices_by_cosine_similarity(query_embedding, embeddings, k=max_results)
         return self.db.iloc[top_indices]
 
     def get_by_title(self, title: str) -> pd.Series:
-        df = self.db[self.db['title'] == title]
+        if self.empty:
+            return pd.Series()
+        df = self.db[self.db['searchable_title'] == self._get_searchable_title(title)]
         if df.empty:
             self.logger.warn(f"Tried to get title \"{title}\" from archive, but it does not exist")
             return pd.Series()
