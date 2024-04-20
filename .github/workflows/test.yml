@@ -18,6 +18,8 @@ jobs:
         - name: Echo
           run: |
             echo "$(pwd)/gh-pages/embeddings";
-            ls ;
-            ls ..;
+            echo "----";
+            ls;
+            echo "----";
+            ls "$(pwd)/gh-pages/embeddings";
 
