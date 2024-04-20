@@ -1,0 +1,19 @@
+name: Test
+
+on:
+    workflow_dispatch: 
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        
+        steps:
+        - uses: actions/checkout@v4
+          with:
+            ref: main
+        - uses: actions/checkout@v4
+          with:
+            ref: 'gh-pages'  
+            path: 'gh-pages'
+        - name: Echo
+          run: echo "$(pwd)/gh-pages/embeddings"
