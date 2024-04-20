@@ -27,8 +27,8 @@ class Embedder:
 class Archive:
     def __init__(self) -> None:
         self.embedder = Embedder()
-        self.db: pd.DataFrame = self._get_data_from_dir()
         self.logger = get_logger()
+        self.db: pd.DataFrame = self._get_data_from_dir()
 
     def _get_data_from_dir(self) -> pd.DataFrame:
         embeddings_dir: str = Settings().embeddings.directory
