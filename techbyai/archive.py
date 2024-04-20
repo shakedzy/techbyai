@@ -34,10 +34,11 @@ class Archive:
         embeddings_dir: str = Settings().embeddings.directory
         if not embeddings_dir.endswith('/'): embeddings_dir += '/'
         self.logger.info(f"Loading archive from: {embeddings_dir}")
-        raise RuntimeError("XXX")
         dfs: list[pd.DataFrame] = list()
         for filename in glob(embeddings_dir + '*.csv'):
             dfs.append(pd.read_csv(filename, index_col=None, header=0))
+        self.logger.info(f"Found {len(dfs)} files in archive")
+        raise RuntimeError("XXX")
         df = pd.concat(dfs, axis=0, ignore_index=True)
         df['embedding'] = df['embedding'].apply(literal_eval)
         return df
