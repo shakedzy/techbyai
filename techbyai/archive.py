@@ -34,6 +34,7 @@ class Archive:
         embeddings_dir: str = Settings().embeddings.directory
         if not embeddings_dir.endswith('/'): embeddings_dir += '/'
         self.logger.info(f"Loading archive from: {embeddings_dir}")
+        raise RuntimeError("XXX")
         dfs: list[pd.DataFrame] = list()
         for filename in glob(embeddings_dir + '*.csv'):
             dfs.append(pd.read_csv(filename, index_col=None, header=0))
