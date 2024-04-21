@@ -17,7 +17,7 @@ _Summarized by: Eli Byteforge_ [[www.marktechpost.com](https://www.marktechpost.
 <blockquote class='previous-titles' markdown='1' >
 **Previous headlines:**
 
- * [Intel, AMD Discuss How AI Will Test and Revolutionize Data Centers]({{ '2024/04/18/todays-ai-revolution-from-data-centers-to-robotics#' | append: (Intel, AMD Discuss How AI Will Test and Revolutionize Data Centers | slugify)  | relative_url }}) 2024-04-18
+ * [Intel, AMD Discuss How AI Will Test and Revolutionize Data Centers]({{ '2024/04/18/todays-ai-revolution-from-data-centers-to-robotics#' | append: ("Intel, AMD Discuss How AI Will Test and Revolutionize Data Centers" | slugify)  | relative_url }}) 2024-04-18
 </blockquote>
 
 Deep learning's impact is magnified by advancements in hardware like GPUs and TPUs, essential for tasks from healthcare to autonomous driving. GPUs excel in parallel processing, pivotal for deep learning, with NVIDIA's CUDA enabling economical model scaling. Google's TPUs, optimizing neural network operations, enhance processing speed and energy efficiency, key for data center cost reduction. The article also explores FPGAs and ASICs for specific applications and neuromorphic computing's potential in mimicking human brain architecture for better efficiency. It highlights the need to balance performance, cost, and energy efficiency amidst challenges like development costs and software compatibility, underscoring the importance of innovation in deep learning hardware.
@@ -27,7 +27,7 @@ _Summarized by: Eli Byteforge_ [[aibusiness.com](https://aibusiness.com/vertical
 <blockquote class='previous-titles' markdown='1' >
 **Previous headlines:**
 
- * [Nvidia introduces Project GR00T, a general-purpose foundation model for humanoid robots]({{ '2024/04/17/todays-ai-frontier-robots-to-regulations#' | append: (Nvidia introduces Project GR00T, a general-purpose foundation model for humanoid robots | slugify)  | relative_url }}) 2024-04-17
+ * [Nvidia introduces Project GR00T, a general-purpose foundation model for humanoid robots]({{ '2024/04/17/todays-ai-frontier-robots-to-regulations#' | append: ("Nvidia introduces Project GR00T, a general-purpose foundation model for humanoid robots" | slugify)  | relative_url }}) 2024-04-17
 </blockquote>
 
 Google has unveiled a groundbreaking robot capable of tasks needing reasoning, like cleaning spills on command. This leap forward is powered by PaLM-SayCan, blending linguistic prowess with physical dexterity, developed alongside Everyday Robots. Employing audio-visual sensors and machine learning, it navigates and interprets tasks autonomously. While promising to transform everyday robot use, Google is cautious of privacy and security implications.
@@ -37,7 +37,7 @@ _Summarized by: Luna Techwhisper_ [[www.marktechpost.com](https://www.marktechpo
 <blockquote class='previous-titles' markdown='1' >
 **Previous headlines:**
 
- * [Towards an international regulatory framework for AI safety: lessons from the EU AI Act]({{ '2024/04/13/ais-pioneering-leap-todays-technological-marvels#' | append: (Towards an international regulatory framework for AI safety: lessons from the EU AI Act | slugify)  | relative_url }}) 2024-04-13
+ * [Towards an international regulatory framework for AI safety: lessons from the EU AI Act]({{ '2024/04/13/ais-pioneering-leap-todays-technological-marvels#' | append: ("Towards an international regulatory framework for AI safety: lessons from the EU AI Act" | slugify)  | relative_url }}) 2024-04-13
 </blockquote>
 
 MLCommons, a coalition of industry and academia, has unveiled v0.5 of the AI Safety Benchmark through its AI Safety Working Group. This benchmark, a collaborative effort with entities like Stanford University and Google Research, aims to evaluate AI systems for safety risks, particularly those using chat-tuned language models. It introduces a structured framework for benchmarking, including a taxonomy of 13 hazard categories, of which seven are tested across 43,090 test items. Additionally, it provides ModelBench, an open platform and tool for AI safety evaluation, and a principled grading system. The benchmark assesses AI systems on their potential for physical, emotional, financial, and reputational harms, employing techniques like algorithmic auditing and exploratory evaluation. It targets model providers, integrators, and AI standards makers, emphasizing the importance of safe model development, regulatory compliance, and effective product safety. Preliminary results from testing 13 models released between March 2023 and February 2024 show varied risk levels, underscoring the benchmark's role in advancing AI safety research and innovation.
@@ -47,7 +47,7 @@ _Summarized by: Luna Techwhisper_ [[techcrunch.com](https://techcrunch.com/2024/
 <blockquote class='previous-titles' markdown='1' >
 **Previous headlines:**
 
- * [Boston Dynamics unveils new humanoid Atlas robot for 'real-world applications']({{ '2024/04/19/todays-ai-frontiers-innovations-and-regulations#' | append: (Boston Dynamics unveils new humanoid Atlas robot for 'real-world applications' | slugify)  | relative_url }}) 2024-04-19
+ * [Boston Dynamics unveils new humanoid Atlas robot for 'real-world applications']({{ '2024/04/19/todays-ai-frontiers-innovations-and-regulations#' | append: ("Boston Dynamics unveils new humanoid Atlas robot for 'real-world applications'" | slugify)  | relative_url }}) 2024-04-19
 </blockquote>
 
 Boston Dynamics unveils a new, friendlier Atlas robot, setting potential industry standards. Tech reviewer MKBHD faces backlash for his critical review of Humane AI's Ai Pin, despite the company's financial stability. Tesla initiates layoffs amid an EV price war, impacting its financial performance. Other developments include Elon Musk's plans to charge for posting on X to combat bots, a ransomware attack on Change Healthcare, and Tesla's adjustments to EV pricing and its Full Self-Driving package.
@@ -57,7 +57,7 @@ _Summarized by: Eli Byteforge_ [[www.sciencedaily.com](https://www.sciencedaily.
 <blockquote class='previous-titles' markdown='1' >
 **Previous headlines:**
 
- * [Algor-ethics: charting the ethical path for AI in critical care]({{ '2024/04/05/ais-2024-milestone-innovation-and-ethical-challenges#' | append: (Algor-ethics: charting the ethical path for AI in critical care | slugify)  | relative_url }}) 2024-04-05
+ * [Algor-ethics: charting the ethical path for AI in critical care]({{ '2024/04/05/ais-2024-milestone-innovation-and-ethical-challenges#' | append: ("Algor-ethics: charting the ethical path for AI in critical care" | slugify)  | relative_url }}) 2024-04-05
 </blockquote>
 
 In the innovative realm of heart research, scientists have introduced BeatProfiler, a state-of-the-art tool designed to automate the analysis of heart cell function through video data. This pioneering system, for the first time, amalgamates the entire process into a single, streamlined solution. BeatProfiler's introduction marks a significant leap forward in cardiac research, offering researchers an efficient and comprehensive means to study heart cell behaviors and functions. This breakthrough tool is expected to accelerate the pace of heart research, providing insights into cardiac health and potentially leading to advancements in the treatment and understanding of heart-related conditions.
@@ -67,8 +67,8 @@ _Summarized by: Eli Byteforge_ [[thecuberesearch.com](https://thecuberesearch.co
 <blockquote class='previous-titles' markdown='1' >
 **Previous headlines:**
 
- * [2024 Cybersecurity & AI Trends Guide]({{ '2024/04/05/ais-2024-milestone-innovation-and-ethical-challenges#' | append: (2024 Cybersecurity & AI Trends Guide | slugify)  | relative_url }}) 2024-04-05
- * [Darktrace Transforms Security Operations and Improves Cyber Resilience with AI Innovations]({{ '2024/04/10/todays-ai-and-tech-innovations-roundup#' | append: (Darktrace Transforms Security Operations and Improves Cyber Resilience with AI Innovations | slugify)  | relative_url }}) 2024-04-10
+ * [2024 Cybersecurity & AI Trends Guide]({{ '2024/04/05/ais-2024-milestone-innovation-and-ethical-challenges#' | append: ("2024 Cybersecurity & AI Trends Guide" | slugify)  | relative_url }}) 2024-04-05
+ * [Darktrace Transforms Security Operations and Improves Cyber Resilience with AI Innovations]({{ '2024/04/10/todays-ai-and-tech-innovations-roundup#' | append: ("Darktrace Transforms Security Operations and Improves Cyber Resilience with AI Innovations" | slugify)  | relative_url }}) 2024-04-10
 </blockquote>
 
 The Zscaler ThreatLabZ 2024 AI Security Report, analyzing over 18 billion transactions, reveals a 595% surge in AI/ML usage across sectors, highlighting the security challenges it brings. It discusses internal risks like data leaks and the security of AI applications, alongside external threats from cybercriminals using AI for sophisticated attacks. Enterprises are now blocking up to 18.5% of AI/ML transactions to mitigate risks, with manufacturing leading in AI/ML traffic. The report emphasizes the need for secure data management and advises a cautious approach towards AI app usage, advocating for visibility, granular access controls, and robust data security measures to protect against AI-related threats.
