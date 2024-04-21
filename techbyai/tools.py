@@ -4,24 +4,14 @@ import json
 import arxiv
 import inspect
 import requests
-from time import sleep
 from datetime import datetime, timedelta
-from selenium import webdriver
-from pyvirtualdisplay.display import Display
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
-from . import is_xvfb_installed
 from .color_logger import get_logger
 from .settings import Settings
-from .utils import read_pdf, domain_of_url
+from .utils import read_pdf
 from .archive import Archive
 from ._types import ToolsDefType
-
-
-if is_xvfb_installed():
-    get_logger().info('Detected Xvfb, setting up virtual display')
-    display = Display()
-    display.start()
 
 
 def handle_tool_error(e: Exception) -> None:
@@ -106,33 +96,6 @@ def visit_website(url: str) -> str:
             raise RuntimeError(f"ERROR: Failed to retrieve the webpage. Status code: {response.status_code}")
     except Exception as e:
         handle_tool_error(e)
-        return f"ERROR: {e}"
-    
-
-def get_raw_tweet(url: str) -> str:
-    """
-    Takes a URL of a tweet from Twitter and returns a simple raw version of the text. All media types are excluded.
-    """
-    try:
-        url = url.replace(domain_of_url(url), 'nitter.poast.org')
-        options = webdriver.ChromeOptions()
-        options.add_argument(f'user-agent={Settings().web.user_agent}')
-        driver = webdriver.Chrome(options=options)
-        driver.get(url)
-        sleep(15)
-        html_content = driver.page_source
-        driver.quit()
-
-        soup = BeautifulSoup(html_content, 'html.parser')
-        text = soup.get_text()
-
-        # Clean whitespaces
-        text = re.sub(pattern=r'[ \t]+', repl=' ', string=text)  # Replace multiple spaces and tabs with a single space
-        text = re.sub(pattern=r'\n{3,}', repl='\n\n', string=text)  # Replace more than two newlines with two newlines
-        text = text.strip()
-
-        return text 
-    except Exception as e:
         return f"ERROR: {e}"
 
 
@@ -220,6 +183,7 @@ tools_params_definitions: ToolsDefType = {
     visit_website: [("url", {"type": "string", "description": "The URL of the page to visit"}, True)],
     search_for_tweets: [("usernames", {"type": "array", "items": {"type": "string"}, "description": "A list of Twitter usernames to limit the search to"}, True),
                         ("query", {"type": "string", "description": "The query to search in tweets"}, False)],
-    get_raw_tweet: [("url", {"type": "string", "description": "The full URL of the tweet on Twitter to read"}, True)],
+    new_ai_research_from_arxiv: [],
+    arxiv_paper: [("paper_id", {"type": "string", "description": "The arXiv ID of the paper to fetch"}, True)],
     query_magazine_archive: [("query", {"type": "string", "description": "The query to search in the archive magazine"}, True)]
 }

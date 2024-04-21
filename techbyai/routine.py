@@ -15,7 +15,6 @@ from .settings import Settings
 from .cost import Cost
 from .audio import Narrator
 from .archive import Archive, Embedder
-from .tools import get_raw_tweet
 
 
 class Routine:
@@ -136,20 +135,12 @@ class Routine:
             - Search for tweets using the `search_for_tweets` tool. Remember the `query` parameter is optional! Give it a go without a query first, and use it to filter results
             - DO NOT, and I repeat - DO NOT use tweets of random users, as they might be spam. You are only allowed to use tweets posted by the people on the list!
             - Prefer to list tweets from as many different people from those provided
-            - Prefer tweets with more interactions. Use the `get_raw_tweet` for tweet stats
             - DO NOT BE LAZY! If one search didn't yield result, try another! Don't stop trying before truing 5 different attempts!
             ```
             """.strip())
         result = self.twitter_analyst.do(second_task, as_json=True)
         self.logger.debug(result.content)
         trends_and_urls = result.json
-        # for trend, urls in trends_and_urls.items():
-        #     with ThreadPoolExecutor() as executor:
-        #         futures = [executor.submit(get_tweet_text, url) for url in urls]
-        #     removed = ["Tweet not found" in f.result() for f in futures]
-        #     remaining_urls = [u for u,r in zip(urls, removed) if not r]
-        #     trends_and_urls[trend] = remaining_urls
-        # trends_and_urls = {t: u for t,u in trends_and_urls.items() if u}
         self.logger.debug(f"Remaining trends and URLs: {str(trends_and_urls)}")
         return trends_and_urls
     
