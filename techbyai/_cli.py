@@ -7,11 +7,11 @@ from .utils import path_to_resource
 
 def run():
     parser = ArgumentParser()
-    parser.add_argument('--embdir', dest='embdir', help='Path to embeddings file directory', required=True, type=str)
+    parser.add_argument('--archive', dest='archive', help='Path to archive directory', required=True, type=str)
     parser.add_argument('-l', '--log-level', default='INFO', dest='log', help='Set logging level', type=str)
     args = parser.parse_args()
     
     set_default_log_level(args.log.upper())
     init_settings([path_to_resource("config.toml")])
-    Settings().embeddings.directory = args.embdir
+    Settings().archive = args.archive
     Routine().do()

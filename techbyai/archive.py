@@ -32,7 +32,7 @@ class Archive:
         self.db: pd.DataFrame = self._get_data_from_dir()
 
     def _get_data_from_dir(self) -> pd.DataFrame:
-        embeddings_dir: str = Settings().embeddings.directory
+        embeddings_dir: str = Settings().archive
         if not embeddings_dir.endswith('/'): embeddings_dir += '/'
         self.logger.info(f"Loading archive from: {embeddings_dir}")
         dfs: list[pd.DataFrame] = list()

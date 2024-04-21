@@ -7,13 +7,21 @@ import requests
 from time import sleep
 from datetime import datetime, timedelta
 from selenium import webdriver
+from pyvirtualdisplay.display import Display
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
+from . import is_xvfb_installed
 from .color_logger import get_logger
 from .settings import Settings
 from .utils import read_pdf, domain_of_url
 from .archive import Archive
 from ._types import ToolsDefType
+
+
+if is_xvfb_installed():
+    get_logger().info('Detected Xvfb, setting up virtual display')
+    display = Display()
+    display.start()
 
 
 def handle_tool_error(e: Exception) -> None:
@@ -51,7 +59,7 @@ def web_search(query: str) -> str:
             ).execute()
         
         if 'items' not in response:
-            get_logger().debug(f'Query {query} yielded no results!')
+            get_logger().debug(f'Query: {query} yielded no results!')
             return "No results"
         
         for result in response['items']:
@@ -65,6 +73,16 @@ def web_search(query: str) -> str:
     except Exception as e:
         handle_tool_error(e)
         return f"Error while searching the web: {e}"
+
+
+def search_for_tweets(usernames: list[str], query: str = '') -> str:
+    """
+    Search the web for tweets from the given list of Twitter user-names.
+    Every result is provided with the page title and full URL.
+    Results are separated by: =====
+    """
+    twitter_filter = ' OR '.join([f"site:twitter.com/{u.strip('@')}" for u in usernames])
+    return web_search(f'{query} ({twitter_filter})')
 
 
 def visit_website(url: str) -> str:
@@ -91,7 +109,7 @@ def visit_website(url: str) -> str:
         return f"ERROR: {e}"
     
 
-def get_tweet_text(url: str) -> str:
+def get_raw_tweet(url: str) -> str:
     """
     Takes a URL of a tweet from Twitter and returns a simple raw version of the text. All media types are excluded.
     """
@@ -200,6 +218,8 @@ def query_magazine_archive(query: str, archive: Archive) -> str:
 tools_params_definitions: ToolsDefType = {
     web_search: [("query", {"type": "string", "description": "The query to search on the web"}, True)],
     visit_website: [("url", {"type": "string", "description": "The URL of the page to visit"}, True)],
-    get_tweet_text: [("url", {"type": "string", "description": "The full URL of the tweet on Twitter to read"}, True)],
+    search_for_tweets: [("usernames", {"type": "array", "items": {"type": "string"}, "description": "A list of Twitter usernames to limit the search to"}, True),
+                        ("query", {"type": "string", "description": "The query to search in tweets"}, False)],
+    get_raw_tweet: [("url", {"type": "string", "description": "The full URL of the tweet on Twitter to read"}, True)],
     query_magazine_archive: [("query", {"type": "string", "description": "The query to search in the archive magazine"}, True)]
 }

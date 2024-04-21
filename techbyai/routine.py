@@ -15,7 +15,7 @@ from .settings import Settings
 from .cost import Cost
 from .audio import Narrator
 from .archive import Archive, Embedder
-from .tools import get_tweet_text
+from .tools import get_raw_tweet
 
 
 class Routine:
@@ -57,7 +57,7 @@ class Routine:
             ```json
             {{"John Smith": "You are a ..."}}
             ```
-            Be creative with the names you choose, don't go with your default ones!
+            Be original with the names you choose, but don't go silly.
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
             """.strip())
         result = assistant.do(task, as_json=True)
@@ -76,7 +76,7 @@ class Routine:
             Describe each of the {Settings().editorial.reporters} individuals you hire for this task. 
             Your response should be a JSON, where the keys are the names of the reporters (which you generate),
             and the values are their characteristics description.
-            Be creative with the names you choose, don't go with your default ones!
+            Be creative with the names you choose, but don't go silly.
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
             """.strip())
         result = self.editor.do(task, as_json=True)
@@ -106,19 +106,23 @@ class Routine:
             Come up with a list of people and influencers in the fields of {Settings().editorial.subject} which should be followed on Twitter.
             Return your list as a JSON, of the following format:
             ```json
-            {{"people": ["FULL NAME",...]}}
+            {{"USERNAME": "FULL NAME", ...}}
             ```
+            Where USERNAME is the Twitter user-name (user-handle) of the person.
             """.strip())
         result = self.twitter_analyst.do(initial_task, as_json=True)
         self.logger.debug(result.content)
-        people: list[str] = result.json.get("people", []) + Settings().editorial.people
-        people = list(set(people))
+        predefined_twitter_accounts: dict[str, str] = Settings().editorial.twitter_accounts
+        accounts: dict[str, str] = {k.strip('@'): v for k,v in result.json.items()}
+        people: dict[str, str] = accounts | predefined_twitter_accounts
+        self.logger.info(f"Following these people on Twitter: {[f'{v} (@{k})' for k,v in people.items()]}")
+        people_as_list = '\n'.join([f'* {v} (username: @{k})' for k,v in people.items()])
 
         second_task = dedent(
             f"""
             Search on Twitter for the most interesting and trending topics these people and influencers discuss in the fields of {Settings().editorial.subject}:
-            {people}
-            Choose up to {Settings().editorial.reporter_items} topics based on their tweets, along with 1-2 tweets per topic (the best ones by your opinion), 
+            {people_as_list}
+            Choose up to {Settings().editorial.reporter_items} topics based on their tweets, along with ~2 tweets per topic (the best ones by your opinion), 
             and return your decision as a JSON in the following format:
             ```json
             {{
@@ -128,21 +132,23 @@ class Routine:
             IMPORTANT: 
             - Do NOT choose broad topics (i.e. "Ethics and Bias in AI", "Advancements in Natural Language Processing", and things like that)! Choose very 
               specific subjects (a new model, a new breakthrough, etc.) Prefer less topics than broad topics!
-            - You have access to Twitter via the web search tool, simply append the string 'site:twitter.com' at the end of the query
-            - DO NOT, and I repeat - DO NOT use tweets of random users, as they might be spam. Only refer to tweets posted by the people on your list!!
-            - Be creative in your search, look up hashtags and other Twitter specific terms
+            - Search for tweets using the `search_for_tweets` tool. Remember the `query` parameter is optional! Give it a go without a query first, and use it to filter results
+            - DO NOT, and I repeat - DO NOT use tweets of random users, as they might be spam. You are only allowed to use tweets posted by the people on the list!
+            - Prefer to list tweets from as many different people from those provided
+            - Prefer tweets with more interactions. Use the `get_raw_tweet` for tweet stats
+            - DO NOT BE LAZY! If one search didn't yield result, try another! Don't stop trying before truing 5 different attempts!
             ```
             """.strip())
         result = self.twitter_analyst.do(second_task, as_json=True)
         self.logger.debug(result.content)
         trends_and_urls = result.json
-        for trend, urls in trends_and_urls.items():
-            with ThreadPoolExecutor() as executor:
-                futures = [executor.submit(get_tweet_text, url) for url in urls]
-            removed = ["Tweet not found" in f.result() for f in futures]
-            remaining_urls = [u for u,r in zip(urls, removed) if not r]
-            trends_and_urls[trend] = remaining_urls
-        trends_and_urls = {t: u for t,u in trends_and_urls.items() if u}
+        # for trend, urls in trends_and_urls.items():
+        #     with ThreadPoolExecutor() as executor:
+        #         futures = [executor.submit(get_tweet_text, url) for url in urls]
+        #     removed = ["Tweet not found" in f.result() for f in futures]
+        #     remaining_urls = [u for u,r in zip(urls, removed) if not r]
+        #     trends_and_urls[trend] = remaining_urls
+        # trends_and_urls = {t: u for t,u in trends_and_urls.items() if u}
         self.logger.debug(f"Remaining trends and URLs: {str(trends_and_urls)}")
         return trends_and_urls
     
@@ -385,7 +391,7 @@ class Routine:
                 for title in item.previous_titles:
                     series = self.archive.get_by_title(title)
                     if not series.empty:
-                        previous_titles.append(f" * [{remove_pipes(series['title'])}](" + "{{ '" + series['page'].replace('-', '/', 3) + f"#' | append: (\"{series['title']}\" | slugify) " + " | relative_url }}" + f") {series['date']}")
+                        previous_titles.append(f"{{% assign article_title = \"{series['title']}\" | slugify %}}\n * [{remove_pipes(series['title'])}](" + "{{ '" + series['page'].replace('-', '/', 3) + f"#' | append: article_title" + " | relative_url }}" + f") {series['date']}")
                 if previous_titles:
                     remove_margin = "style='margin-bottom: 0;'"
                     previous_titles = ([f"\n<blockquote class='previous-titles' markdown='1' {remove_margin if similar_items else ''}>\n**Previous headlines:**\n"] + previous_titles + ["</blockquote>"])
@@ -452,14 +458,15 @@ class Routine:
         def embedded_tweet_html(url: str) -> str:
             return dedent(
                 f"""
-                <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true">
-                    <a href="{url}"></a>
+                <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
+                <a href="{url}"></a>
                 </blockquote>
+                <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                 """.strip())
         
         if tweets_urls:
             htmls = [embedded_tweet_html(url) for url in tweets_urls]
-            htmls = ["## Trending on Twitter"] + htmls + ['<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>']
+            htmls = ["## Trending on Twitter"] + htmls
             return '\n'.join(htmls)
         else:
             return ''

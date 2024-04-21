@@ -62,15 +62,4 @@ companies = [
         "Ollama",
         "GitHub"
         ]
-people = [
-        "Aravind Srinivas", 
-        "Brett Adcock", 
-        "Satya Nadella",
-        "Yam Peleg", 
-        "Guillaume Lample", 
-        "Arthur Mensch", 
-        "Yann LeCun", 
-        "Andrej Karpathy", 
-        "Andrew Ng", 
-        "Geoffrey Hinton"
-        ]
+twitter_accounts = {"AravSrinivas" = "Aravind Srinivas", "adcock_brett" = "Brett Adcock", "satyanadella" = "Satya Nadella", "Yampeleg" = "Yam Peleg", "arthurmensch" = "Arthur Mensch", "ylecun" = "Yann LeCun", "karpathy" = "Andrej Karpathy", "AndrewYNg" = "Andrew Ng", "geoffreyhinton" = "Geoffrey Hinton"}
