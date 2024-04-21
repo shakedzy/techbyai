@@ -385,7 +385,7 @@ class Routine:
                 for title in item.previous_titles:
                     series = self.archive.get_by_title(title)
                     if not series.empty:
-                        previous_titles.append(f" * [{remove_pipes(series['title'])}](" + "{{ '" + series['page'].replace('-', '/', 3) + f"#' | append: ({series['title']} | slugify) " + " | relative_url }}" + f") {series['date']}")
+                        previous_titles.append(f" * [{remove_pipes(series['title'])}](" + "{{ '" + series['page'].replace('-', '/', 3) + f"#' | append: (\"{series['title']}\" | slugify) " + " | relative_url }}" + f") {series['date']}")
                 if previous_titles:
                     remove_margin = "style='margin-bottom: 0;'"
                     previous_titles = ([f"\n<blockquote class='previous-titles' markdown='1' {remove_margin if similar_items else ''}>\n**Previous headlines:**\n"] + previous_titles + ["</blockquote>"])
