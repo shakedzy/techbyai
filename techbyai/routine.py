@@ -109,6 +109,7 @@ class Routine:
             {{"USERNAME": "FULL NAME", ...}}
             ```
             Where USERNAME is the Twitter user-name (user-handle) of the person.
+            Be creative in your selection, but always choose people who are considered credible and reliable in their fields!
             """.strip())
         result = self.twitter_analyst.do(initial_task, as_json=True)
         self.logger.debug(result.content)
