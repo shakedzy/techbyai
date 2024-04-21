@@ -73,20 +73,6 @@ _Summarized by: Eli Byteforge_ [[thecuberesearch.com](https://thecuberesearch.co
 
 The Zscaler ThreatLabZ 2024 AI Security Report, analyzing over 18 billion transactions, reveals a 595% surge in AI/ML usage across sectors, highlighting the security challenges it brings. It discusses internal risks like data leaks and the security of AI applications, alongside external threats from cybercriminals using AI for sophisticated attacks. Enterprises are now blocking up to 18.5% of AI/ML transactions to mitigate risks, with manufacturing leading in AI/ML traffic. The report emphasizes the need for secure data management and advises a cautious approach towards AI app usage, advocating for visibility, granular access controls, and robust data security measures to protect against AI-related threats.
 
-## Trending on Twitter
-<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true">
-                    <a href="https://twitter.com/camenduru/status/1516492727277271047"></a>
-                </blockquote>
-<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true">
-                    <a href="https://twitter.com/GidionRabut/status/1516264819279493121"></a>
-                </blockquote>
-<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true">
-                    <a href="https://twitter.com/yydssvsv/status/1516272727277271048"></a>
-                </blockquote>
-<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true">
-                    <a href="https://twitter.com/yydssvsv/status/1516272727277271049"></a>
-                </blockquote>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 **Other headlines:**
 * [Binghamton University set to receive $5M for AI research and development](https://www.binghamton.edu/news/story/4821/binghamton-university-set-to-receive-5-million-landmark-gift-to-pursue-ai-research-and-development)
