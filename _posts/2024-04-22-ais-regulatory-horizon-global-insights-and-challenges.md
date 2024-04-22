@@ -37,25 +37,21 @@ Researchers from the University of Sydney, University of New South Wales, and Un
 
 ## Trending on Twitter
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
-                <a href="https://twitter.com/Yampeleg/status/1782013575562657936"></a>
-                </blockquote>
-                <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<a href="https://twitter.com/Yampeleg/status/1782013575562657936"></a>
+</blockquote>
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
-                <a href="https://twitter.com/adcock_brett/status/1782077864860348634"></a>
-                </blockquote>
-                <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<a href="https://twitter.com/adcock_brett/status/1782077864860348634"></a>
+</blockquote>
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
-                <a href="https://twitter.com/ylecun/status/1782032270716740048"></a>
-                </blockquote>
-                <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<a href="https://twitter.com/ylecun/status/1782032270716740048"></a>
+</blockquote>
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
-                <a href="https://twitter.com/Yampeleg/status/1782067790897168412"></a>
-                </blockquote>
-                <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<a href="https://twitter.com/Yampeleg/status/1782067790897168412"></a>
+</blockquote>
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
-                <a href="https://twitter.com/adcock_brett/status/1782077842047606824"></a>
-                </blockquote>
-                <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<a href="https://twitter.com/adcock_brett/status/1782077842047606824"></a>
+</blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 **Other headlines:**
 * [Utah Sets a New Standard in AI Regulation with the Enactment of the AI Policy Act](https://complexdiscovery.com/utah-sets-a-new-standard-in-ai-regulation-with-the-enactment-of-the-ai-policy-act/)
