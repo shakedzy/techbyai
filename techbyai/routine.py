@@ -15,6 +15,7 @@ from .settings import Settings
 from .cost import Cost
 from .audio import Narrator
 from .archive import Archive, Embedder
+from .tools import WEB_TOOLS, ARXIV_TOOLS, TWITTER_TOOLS, MAGAZINE_TOOLS
 
 
 class Routine:
@@ -41,10 +42,10 @@ class Routine:
         return ", ".join(topics_list)
 
     def _hire_editor(self) -> Assistant:
-        assistant = Assistant(definition="You are a creative AI assistant", name='', archive=self.archive)
+        assistant = Assistant(definition="You are a creative AI assistant")
         task = dedent(
             f"""
-            I need to hire an Editor-in-Chief for a daily {Settings().editorial.subject} magazine. Think of 4 different types
+            I need to hire an Editor-in-Chief for a daily {Settings().editorial.subject} magazine. Think of 3 different types
             of editors and describe their characteristics.
             Your response should be a JSON, where the keys are the names of the editors (which you generate),
             and the values are their characteristics description.
@@ -65,7 +66,7 @@ class Routine:
         selected_editor = possible_editors[randint(0,3)]
         self.logger.debug(f"Selected editor: {selected_editor['name']} - {selected_editor['definition']}")
         editor_def = f"You are the Editor-in-Chief of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {selected_editor['definition']}"
-        return Assistant(definition=editor_def, name=selected_editor['name'], archive=self.archive)
+        return Assistant(definition=editor_def, name=selected_editor['name'], archive=self.archive, tools=WEB_TOOLS + ARXIV_TOOLS + TWITTER_TOOLS + MAGAZINE_TOOLS)
     
     def _hire_reporters(self) -> tuple[list[Assistant], Assistant]:
         task = dedent(
@@ -74,15 +75,18 @@ class Routine:
             for today's issue about the latest news and trends in {Settings().editorial.subject}. 
             Describe each of the {Settings().editorial.reporters} individuals you hire for this task. 
             Your response should be a JSON, where the keys are the names of the reporters (which you generate),
-            and the values are their characteristics description.
+            and the values are their characteristics description. Don't write the description as a JSON too, but as a coherent and fluent text (i.e. "You are...")
             Be creative with the names you choose, but don't go silly.
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
             """.strip())
         result = self.editor.do(task, as_json=True)
         self.logger.debug(result.content)
+        reporters_kv_list = list(result.json.items())[:Settings().editorial.reporters]
         reporters = []
-        for name, description in list(result.json.items())[:Settings().editorial.reporters]:
-            reporters.append(Assistant(f"You are a reporter of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}", name=name, archive=self.archive))
+        for i, (name, description) in enumerate(reporters_kv_list):
+            reporter_def = f"You are a reporter of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}"
+            tools = ARXIV_TOOLS if i == 0 else WEB_TOOLS
+            reporters.append(Assistant(reporter_def, name=name, tools=tools))
         
         second_task = dedent(
             f"""
@@ -90,13 +94,15 @@ class Routine:
             and do research for topics to write about.
             Describe this individual. 
             Your response should be a JSON, where the keys are the names of the reporters (which you generate),
+            Don't write the description as a JSON too, but as a coherent and fluent text (i.e. "You are...")
             and the values are their characteristics description. The name should be different than the names of your other reporters: {list(result.json.keys())}.
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
             """.strip())
         result = self.editor.do(second_task, as_json=True)
         self.logger.debug(result.content)
         for name, description in list(result.json.items())[:1]:
-            twitter_savvy = Assistant(f"You are a Twitter analyst, working for a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}", name=name, archive=self.archive)
+            analyst_def = f"You are a Twitter analyst, working for a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}"
+            twitter_savvy = Assistant(analyst_def, name=name, tools=TWITTER_TOOLS + WEB_TOOLS)
         return reporters, twitter_savvy
     
     def _twitter_analysis(self) -> dict[str, list[str]]:
@@ -159,6 +165,7 @@ class Routine:
             IMPORTANT GUIDELINES:
             - Come up with at least {2*Settings().editorial.reporter_items} DIFFERENT search queries. 
               For each query, search the web and read webpages to complete your assignment
+            - Consider the credibility and reliability of the sources you choose in their fields
             - You must provide AT LEAST {Settings().editorial.reporter_items} items
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             - If the title you got from the search ends with "...", visit the website and extract the full title from there
@@ -183,7 +190,7 @@ class Routine:
         for i, reporter_suggestions_dict in enumerate([r.json for r in results]):
             reporter_suggestions: list[ItemSuggestion] = []
             for title, url in reporter_suggestions_dict.items():
-                reporter_suggestions.append(ItemSuggestion(title=title, url=url, reporter=self.reporters[i].name))
+                reporter_suggestions.append(ItemSuggestion(title=title, url=url, reporter=self.reporters[i].name or ''))
             suggestions.append(reporter_suggestions)
         return suggestions
     
@@ -311,6 +318,7 @@ class Routine:
                         item.text = edited_text
                 else:
                     item.rank = -1
+                    item.error = True
                 reporter_items[i] = item
             return reporter_items
         
@@ -351,14 +359,21 @@ class Routine:
 
         items = sorted(items, key=lambda s: s.rank if s.rank > 0 else 999)
         md_ranked_articles = []
+        md_inaccessible_articles = []
         md_unranked_articles = []
         ranked_ids = [item.id for item in items if item.rank > 0]
         ids_of_written = []
+        
         for item in items:
+            item_domain = domain_of_url(item.url)
+
             if item.id in ids_of_written:
                 continue
+
+            elif item.error:
+                md_inaccessible_articles.append(f"* [{remove_pipes(item.title)}]({item.url}) ({item_domain})")
             
-            if item.rank == -1: 
+            elif item.rank == -1: 
                 if item.id not in ranked_ids:
                     u = item.url.split("://")[-1]
                     if u.endswith("/"): 
@@ -388,8 +403,7 @@ class Routine:
                     remove_margin = "style='margin-bottom: 0;'"
                     previous_titles = ([f"\n<blockquote class='previous-titles' markdown='1' {remove_margin if similar_items else ''}>\n**Previous headlines:**\n"] + previous_titles + ["</blockquote>"])
                 previous_titles_text = '\n'.join(previous_titles)
-                domain = domain_of_url(item.url)
-                md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{domain}]({item.url})]{previous_titles_text}{similar_text}\n\n{item.text}")
+                md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{item_domain}]({item.url})]{previous_titles_text}{similar_text}\n\n{item.text}")
             ids_of_written.append(item.id)
 
 
@@ -397,6 +411,8 @@ class Routine:
         
         self.logger.info(f"Creating title for article [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
         full_article = '\n\n'.join(md_ranked_articles)
+        if md_inaccessible_articles:
+            full_article += ('\n\n**You might also want to read:**\n' + '\n'.join(md_inaccessible_articles))
         if twitter_urls:
             full_article += ('\n\n' + self._tweets_markdown(twitter_urls))
         full_article += ('\n\n**Other headlines:**\n' + '\n'.join(md_unranked_articles))
@@ -448,17 +464,17 @@ class Routine:
 
     def _tweets_markdown(self, tweets_urls: list[str]) -> str:
         def embedded_tweet_html(url: str) -> str:
-            return dedent(
+            html = dedent(
                 f"""
                 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
                 <a href="{url}"></a>
                 </blockquote>
-                <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                 """.strip())
+            return '\n'.join(s.lstrip() for s in html.split('\n'))
         
         if tweets_urls:
             htmls = [embedded_tweet_html(url) for url in tweets_urls]
-            htmls = ["## Trending on Twitter"] + htmls
+            htmls = ["## Trending on Twitter"] + htmls + ['<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>']
             return '\n'.join(htmls)
         else:
             return ''

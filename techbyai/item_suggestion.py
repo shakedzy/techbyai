@@ -11,6 +11,7 @@ class ItemSuggestion:
     similar_ids: list[str] = field(default_factory=list)
     previous_titles: list[str] = field(default_factory=list)
     text: str = ""
+    error: bool = False
 
     @property
     def id(self) -> str:

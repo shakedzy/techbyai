@@ -4,10 +4,10 @@ from datetime import datetime
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from openai._types import NOT_GIVEN
-from typing import Any
+from typing import Any, Callable
 from .cost import Cost
 from .settings import Settings
-from .tools import tools_params_definitions
+from .tools import build_tools
 from .color_logger import get_logger
 from .archive import Archive
 
@@ -20,39 +20,15 @@ class AssistantResponse:
 
 
 class Assistant:
-    def __init__(self, definition: str, *, name: str, archive: Archive) -> None:
+    def __init__(self, definition: str, *, tools: list[Callable] = [], name: str | None = None, archive: Archive | None = None) -> None:
         self.client = OpenAI()
         self.definition = definition
         self.name = name
-        self.tools = self._build_tools()
-        self.callables = {f.__name__: f for f in tools_params_definitions.keys()}
+        self.tools = build_tools(tools) if tools else NOT_GIVEN
+        self.callables = {f.__name__: f for f in tools}
         self.logger = get_logger()
         self.cost = Cost()
-        self.archive = archive
-
-    def _build_tools(self) -> list[dict[str, Any]]:
-        tools = list()
-        for func, v in tools_params_definitions.items():
-            params = {}
-            required = []
-            for p in v:
-                params[p[0]] = p[1]
-                if p[2]: 
-                    required.append(p[0])
-
-            tools.append({
-                "type": "function",
-                "function": {
-                    "name": func.__name__,
-                    "description": func.__doc__,
-                    "parameters": {
-                        "type": "object",
-                        "properties": params
-                    },
-                    "required": required
-                }
-            })
-        return tools 
+        self.archive = archive 
 
     def _compute_cost(self, completion: ChatCompletion) -> None:
         prompt_tokens: int = completion.usage.prompt_tokens      # type: ignore
@@ -69,39 +45,56 @@ class Assistant:
         ]
 
         final_message = False
+        additional_temperature: float = 0.0
         while not final_message:
             completion = self.client.chat.completions.create(
                 model=Settings().llm.model, 
-                temperature=Settings().llm.temperature, 
+                temperature=Settings().llm.temperature + additional_temperature, 
                 messages=messages,  # type: ignore
                 tools=self.tools,   # type: ignore
                 response_format={"type": "json_object"} if as_json else NOT_GIVEN
             )
+            additional_temperature = 0.0
             assistant_message = completion.choices[0].message
             messages.append(assistant_message)  # type: ignore
             self._compute_cost(completion)
             
             if assistant_message.tool_calls:
-                for tool_call in assistant_message.tool_calls:
+                hallucination_indices: list[int] = []
+                for i, tool_call in enumerate(assistant_message.tool_calls):
                     tool_name = tool_call.function.name
+
                     if tool_name == "multi_tool_use.parallel":
                         # This is a tool hallucination by GPT, it does not exist
-                        tool_name = "multi_tool_use_parallel"  # match '^[a-zA-Z0-9_-]{1,64}$'
-                        tool_result = "There's no such tool names `multi_tool_use.parallel`, use the correct syntax to call multiple tools!"
-                    else:
-                        arguments = json.loads(tool_call.function.arguments)
-                        if tool_name == 'query_magazine_archive':
-                            arguments['archive'] = self.archive
-                        self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
-                        tool_result = self.callables[tool_name](**arguments)
-                        if tool_name == 'web_search':
-                            self.cost += Settings().search.cost_per_query
+                        hallucination_indices.append(i)
+                        self.logger.info("Got hallucination tool request")
+                        continue
+
+                    arguments = json.loads(tool_call.function.arguments)
+                    if tool_name == 'query_magazine_archive':
+                        arguments['archive'] = self.archive
+                    self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
+                    tool_result = self.callables[tool_name](**arguments)
+                    if tool_name == 'web_search':
+                        self.cost += Settings().search.cost_per_query
+                    
                     messages.append({
                         "tool_call_id": tool_call.id,
                         "role": "tool",
                         "name": tool_name,
                         "content": tool_result
                     })
+                
+                if hallucination_indices:
+                    for i in hallucination_indices:
+                        # Remove hallucination-tool calls, as if it never happened
+                        assistant_message.tool_calls.pop(i)
+                    
+                    if not assistant_message.tool_calls:
+                        # All tool calls were hallucinations
+                        messages.pop()  # remove the last message (as it is now just an empty list of tool calls, no tools were called)
+                        additional_temperature = .3  # increase temperature momentarily to avoid creating the same message again
+
             elif as_json:
                 try:
                     content: str = messages[-1].content  # type: ignore

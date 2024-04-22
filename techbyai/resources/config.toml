@@ -27,7 +27,7 @@ cost_per_query = 0.005  # dollars
 [editorial]
 name = "Tech by AI"
 reporters = 3
-reporter_items = 5
+reporter_items = 6
 final_items = 7
 max_words_per_item = 150
 subject = "AI and Generative AI specifically"
