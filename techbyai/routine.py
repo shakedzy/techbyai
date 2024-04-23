@@ -147,7 +147,7 @@ class Routine:
         result = self.twitter_analyst.do(second_task, as_json=True)
         self.logger.debug(result.content)
         trends_and_urls = result.json
-        self.logger.debug(f"Remaining trends and URLs: {str(trends_and_urls)}")
+        self.logger.debug(f"Twitter trends and URLs: {str(trends_and_urls)}")
         return trends_and_urls
     
     def _research(self, twitter_trends: list[str]) -> list[list[ItemSuggestion]]:
@@ -182,10 +182,29 @@ class Routine:
         guidelines = '\n'.join(s.lstrip() for s in guidelines.split('\n'))
         reporters_task = editor_response.content + '\n' + guidelines
         self.logger.debug(reporters_task)
+
+        arxiv_task = dedent(
+            f"""
+            You are the given the task of conducting academic-papers research for the magazine.
+            Search for the latest developments in the fields of {Settings().editorial.subject}, find relevant papers
+            in these fields and return a list of up to {Settings().editorial.reporter_items} such papers, which you believe are the
+            most novel and groundbreaking from those you read. You are given the freedom of returning no papers at all if you believe there's
+            nothing exciting to share with the magazine's professional readers.
+            Return your response as a JSON, where the keys are the papers names and the values are their URLs:
+            ```json
+            {{"Realizing limit cycles in dissipative bosonic systems": "https://arxiv.org/pdf/2401.05332"}}
+            ```
+            Return an empty JSON if there are no results: `{{}}`
+            """.strip())
+        
+        tasks: list[str] = [reporters_task] * len(self.reporters)
+        tasks[0] = arxiv_task
+
         with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(reporter.do, reporters_task, as_json=True) for reporter in self.reporters]
+            futures = [executor.submit(reporter.do, task, as_json=True) for reporter, task in zip(self.reporters, tasks)]
         results = [f.result() for f in futures]
         self.logger.debug([r.content for r in results])
+
         suggestions: list[list[ItemSuggestion]] = []
         for i, reporter_suggestions_dict in enumerate([r.json for r in results]):
             reporter_suggestions: list[ItemSuggestion] = []
