@@ -83,7 +83,21 @@ def visit_website(url: str) -> str:
 
         return text 
     else:
-        raise RuntimeError(f"ERROR: Failed to retrieve the webpage. Status code: {response.status_code}")
+        raise RuntimeError(f"Failed to retrieve the webpage. Status code: {response.status_code}")
+
+
+@tool
+def validate_url(url: str) -> str:
+    """
+    Verifies the URL is live and returns no errors.
+    Returns "OK" if everything is fine or "ERROR" if the URL is unreachable.
+    """
+    headers = {'User-Agent': Settings().web.user_agent}
+    response = requests.get(url, timeout=Settings().web.surf_timeout_seconds, headers=headers)
+    if response.status_code == 200:
+        return "OK"
+    else:
+        return "ERROR"
 
 
 @tool
@@ -170,7 +184,7 @@ TOOLS_PARAMS_DEFINITIONS: ToolsDefType = {
 }
 
 
-WEB_TOOLS = [web_search, visit_website]
+WEB_TOOLS = [web_search, visit_website, validate_url]
 TWITTER_TOOLS = [search_for_tweets]
 ARXIV_TOOLS = [new_ai_research_from_arxiv, get_arxiv_paper]
 MAGAZINE_TOOLS = [query_magazine_archive]

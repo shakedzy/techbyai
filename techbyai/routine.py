@@ -170,6 +170,7 @@ class Routine:
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             - If the title you got from the search ends with "...", visit the website and extract the full title from there
             - Make sure the URL you provide direct to the exact article you chose (and not to a some news aggregation). Search for the specific URL of the article if needed
+            - It is HIGHLY RECOMMENDED that you verify that the URLs you chose are alive using the `validate_url` tool!
             - Your response should be formatted as JSON, where the items titles (meaning: the titles of the 
               articles you read) are the keys, and the values are the items URLs.
             Example:
