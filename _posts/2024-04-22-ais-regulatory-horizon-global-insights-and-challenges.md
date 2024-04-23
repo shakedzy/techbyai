@@ -36,20 +36,20 @@ _Summarized by: Morgan Lee_ [[www.sydney.edu.au](https://www.sydney.edu.au/news-
 Researchers from the University of Sydney, University of New South Wales, and University of Technology Sydney have launched the International Digital Policy Observatory (IDPO). This innovative online database tracks digital policies and regulations across 50 countries, focusing on misinformation, AI regulation, online harms, cybersecurity, and digital identity. Aimed at academics, policymakers, and the ICT industry, the IDPO, funded by the Australian Research Council, seeks to foster knowledge sharing and regulatory best practices. Initially concentrating on misinformation, it aligns with the Draft Combatting Misinformation and Disinformation Bill, with plans to broaden its scope.
 
 ## Trending on Twitter
-<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
-<a href="https://twitter.com/Yampeleg/status/1782013575562657936"></a>
+<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px">
+<div class="loading" style="width: 100%; border-left: 0px;"><a href="https://twitter.com/Yampeleg/status/1782013575562657936"></a></div>
 </blockquote>
-<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
-<a href="https://twitter.com/adcock_brett/status/1782077864860348634"></a>
+<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px">
+<div class="loading" style="width: 100%; border-left: 0px;"><a href="https://twitter.com/adcock_brett/status/1782077864860348634"></a></div>
 </blockquote>
-<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
-<a href="https://twitter.com/ylecun/status/1782032270716740048"></a>
+<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px">
+<div class="loading" style="width: 100%; border-left: 0px;"><a href="https://twitter.com/ylecun/status/1782032270716740048"></a></div>
 </blockquote>
-<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
-<a href="https://twitter.com/Yampeleg/status/1782067790897168412"></a>
+<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px">
+<div class="loading" style="width: 100%; border-left: 0px;"><a href="https://twitter.com/Yampeleg/status/1782067790897168412"></a></div>
 </blockquote>
-<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px;">
-<a href="https://twitter.com/adcock_brett/status/1782077842047606824"></a>
+<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px">
+<div class="loading" style="width: 100%; border-left: 0px;"><a href="https://twitter.com/adcock_brett/status/1782077842047606824"></a></div>
 </blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
