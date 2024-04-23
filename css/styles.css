@@ -85,6 +85,10 @@ body {
     color: #eee !important; /* Light text */
   }
 
+  a:hover {
+    color: #ccc !important;
+  }
+
   .tag {
     color: #0a0a0a !important;
   }
