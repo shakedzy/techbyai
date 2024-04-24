@@ -18,27 +18,27 @@ _Summarized by: Jordan Hayes_ [[siliconangle.com](https://siliconangle.com/2024/
 Perplexity AI, a generative AI search engine startup, has secured $62.7 million in funding, doubling its valuation to over $1 billion. Led by Daniel Gross of Y Combinator, with support from Stanley Druckenmiller, Y Combinator CEO Garry Tan, and Figma CEO Dylan Field, the round also saw participation from Nvidia, Elad Gil, Nat Friedman, and Amazon founder Jeff Bezos. This boosts Perplexity's total funding to $165 million, setting the stage for a potential valuation increase to $2.5-$3 billion. Perplexity distinguishes itself with an AI chatbot for conversational queries, offering intuitive, citation-rich responses. It also launched Enterprise Pro, a $40/month service with enhanced security and privacy for businesses. Plans for global expansion include partnerships with SoftBank Corp. and Deutsche Telekom, targeting over 335 million new users.
 
 # Aligning LLM Agents by Learning Latent Preference from User Edits
-_Summarized by: Alexa Sterling_ [[arxiv.org](http://arxiv.org/pdf/2404.15269v1)]
+_Summarized by: Alexa Sterling_ [[<img src="{{ 'images/pdf.png' | relative_url }}" style="vertical-align: middle; width: 1.2em;" /> arxiv.org](http://arxiv.org/pdf/2404.15269v1)]
 
 In today's issue, we delve into a cutting-edge method for syncing Large Language Models (LLMs) with user preferences through edit analysis. The study, "Aligning LLM Agents by Learning Latent Preference from User Edits," presents PRELUDE, a framework that deduces users' implicit preferences from their edit histories. This aims to lessen the editing users must do on LLM-generated responses. The technique, CIPHER, uses LLMs to infer preferences from edits for specific contexts, then applies these insights to enhance future responses. Tested in summarization and email composition, CIPHER significantly cuts user editing effort and computational costs, surpassing standard methods. This strategy not only better aligns LLMs with user needs but also boosts transparency by letting users adjust inferred preferences.
 
 # SMPLer: Taming Transformers for Monocular 3D Human Shape and Pose Estimation
-_Summarized by: Alexa Sterling_ [[arxiv.org](http://arxiv.org/pdf/2404.15276v1)]
+_Summarized by: Alexa Sterling_ [[<img src="{{ 'images/pdf.png' | relative_url }}" style="vertical-align: middle; width: 1.2em;" /> arxiv.org](http://arxiv.org/pdf/2404.15276v1)]
 
 SMPLer revolutionizes monocular 3D human shape and pose estimation by optimizing Transformers with a SMPL-based framework. By decoupling attention operations and leveraging an SMPL-based target representation, it ensures high-resolution feature use without high computational costs. Enhanced by novel modules like multi-scale and joint-aware attention, SMPLer significantly betters reconstruction, achieving a notable MPJPE of 45.2 mm on Human3.6M, outperforming Mesh Graphormer by over 10% with fewer parameters. This breakthrough promises efficient, accurate 3D human modeling, with resources available to the community.
 
 # CT-GLIP: 3D Grounded Language-Image Pretraining with CT Scans and Radiology Reports for Full-Body Scenarios
-_Summarized by: Alexa Sterling_ [[arxiv.org](http://arxiv.org/pdf/2404.15272v1)]
+_Summarized by: Alexa Sterling_ [[<img src="{{ 'images/pdf.png' | relative_url }}" style="vertical-align: middle; width: 1.2em;" /> arxiv.org](http://arxiv.org/pdf/2404.15272v1)]
 
 In today's issue, we explore "CT-GLIP: 3D Grounded Language-Image Pretraining with CT Scans and Radiology Reports for Full-Body Scenarios." This study pioneers in extending Medical Vision-Language Pretraining (Med-VLP) to 3D imaging, specifically full-body CT scans, overcoming the limitations of previous Med-VLP methods that focused on 2D images of single body parts. CT-GLIP introduces a novel approach by utilizing a multimodal dataset of CT images and corresponding radiology reports. It constructs organ-level image-text pairs to enhance multimodal contrastive learning, aligning visual features with precise diagnostic text. CT-GLIP demonstrates superior performance over standard frameworks in zero-shot and fine-tuning scenarios, trained on a dataset including 44,011 organ-level vision-text pairs from 17,702 patients. This marks a significant advancement in Med-VLP for complex 3D medical imaging scenarios.
 
 # TOP-Nav: Legged Navigation Integrating Terrain, Obstacle and Proprioception Estimation
-_Summarized by: Alexa Sterling_ [[arxiv.org](http://arxiv.org/pdf/2404.15256v1)]
+_Summarized by: Alexa Sterling_ [[<img src="{{ 'images/pdf.png' | relative_url }}" style="vertical-align: middle; width: 1.2em;" /> arxiv.org](http://arxiv.org/pdf/2404.15256v1)]
 
 In the realm of legged robotics, navigating challenging environments demands a fusion of terrain awareness, obstacle avoidance, and proprioceptive feedback. The paper introduces TOP-Nav, a novel framework that integrates these elements to enhance the navigational capabilities of legged robots. By leveraging a comprehensive path planner, TOP-Nav enables robots to select optimal pathways over terrains with higher traversability while effectively circumventing obstacles. The integration of a terrain estimator and a proprioception advisor within the framework allows for real-time adjustments based on terrain and motion feedback, significantly improving the robot's ability to navigate diverse and unpredictable landscapes. Extensive experiments in both simulated and real-world settings demonstrate TOP-Nav's superior performance in open-world navigation, showcasing its potential to overcome the limitations of existing methods that rely heavily on visual inputs or prior terrain knowledge.
 
 # XFT: Unlocking the Power of Code Instruction Tuning by Simply Merging Upcycled Mixture-of-Experts
-_Summarized by: Alexa Sterling_ [[arxiv.org](http://arxiv.org/pdf/2404.15247v1)]
+_Summarized by: Alexa Sterling_ [[<img src="{{ 'images/pdf.png' | relative_url }}" style="vertical-align: middle; width: 1.2em;" /> arxiv.org](http://arxiv.org/pdf/2404.15247v1)]
 
 In today's issue, we explore XFT, a novel training scheme from the paper "XFT: Unlocking the Power of Code Instruction Tuning by Simply Merging Upcycled Mixture-of-Experts." XFT revolutionizes instruction tuning for code LLMs by merging upcycled MoE models, outperforming traditional methods with a shared expert mechanism and a new routing weight strategy. Achieving top results on coding benchmarks like HumanEval with a small code LLM (<3B), XFT surpasses supervised fine-tuning by 13% on HumanEval+, showing its broad applicability and potential to transform code instruction tuning by combining enhanced sparse upcycling with learnable model merging, all without extra inference costs.
 
@@ -72,7 +72,7 @@ Renowned AI and robotics expert, Professor Holly Yanco of UMass Lowell, has been
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 **Other headlines:**
-* [Automatic Layout Planning for Visually-Rich Documents with Instruction-Following Models](http://arxiv.org/pdf/2404.15271v1)
+* [<img src="{{ 'images/pdf.png' | relative_url }}" style="vertical-align: middle; width: 1.2em;" /> Automatic Layout Planning for Visually-Rich Documents with Instruction-Following Models](http://arxiv.org/pdf/2404.15271v1)
 * [This Tiny Chip Can Safeguard User Data While Enabling Efficient Computing on a Smartphone](https://www.sciencedaily.com/news/computers_math/computer_science/)
 * [Despite AI Advancements, Human Oversight Remains Essential](https://www.sciencedaily.com/news/health_medicine/)
 * [Adobe Introduces Firefly Image 3 Foundation Model to Take Creative Exploration and Ideation to New Heights](https://news.adobe.com/news/news-details/2024/Adobe-Introduces-Firefly-Image-3-Foundation-Model-to-Take-Creative-Exploration-and-Ideation-to-New-Heights/default.aspx)
