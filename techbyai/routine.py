@@ -319,7 +319,7 @@ class Routine:
 
                 task = dedent(
                     f"""
-                    Write a summary for toady's issue on {item.title} (URL: {item.url}). 
+                    Write a summary on {item.title} (URL: {item.url}). 
                     Follow these guidelines:
                     - It should be no more than {Settings().editorial.max_words_per_item} words
                     - Do NOT add a title, the editor will add it later
