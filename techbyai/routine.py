@@ -376,6 +376,7 @@ class Routine:
     
     def _write_markdown_article(self, items: list[ItemSuggestion], twitter_urls: list[str]) -> str:
         remove_pipes = lambda s: s.replace(" | ", " ").replace("|", " ")
+        pdf_icon = lambda domain: "<img src=\"{{ 'images/pdf.png' | relative_url }}\" style='vertical-align: middle; width: 1.2em;' /> " if 'arxiv' in domain else ''
 
         items = sorted(items, key=lambda s: s.rank if s.rank > 0 else 999)
         md_ranked_articles = []
@@ -391,15 +392,15 @@ class Routine:
                 continue
 
             elif item.error:
-                md_inaccessible_articles.append(f"* [{remove_pipes(item.title)}]({item.url}) ({item_domain})")
+                md_inaccessible_articles.append(f"* [{pdf_icon(item_domain)}{remove_pipes(item.title)}]({item.url}) ({item_domain})")
             
             elif item.rank == -1: 
                 if item.id not in ranked_ids:
                     u = item.url.split("://")[-1]
                     if u.endswith("/"): 
                         u = u[:-1]
-                    if u != domain_of_url(item.url):
-                        md_unranked_articles.append(f'* [{remove_pipes(item.title)}]({item.url})')
+                    if u != item_domain:
+                        md_unranked_articles.append(f'* [{pdf_icon(item_domain)}{remove_pipes(item.title)}]({item.url})')
             else:
                 similar_items = []
                 for s_id in item.similar_ids:
@@ -407,9 +408,10 @@ class Routine:
                     if len(sim_list) == 0:
                         continue
                     sim = sim_list[0]
-                    if domain_of_url(sim.url) == domain_of_url(item.url):
+                    sim_item_domain = domain_of_url(sim.url)
+                    if sim_item_domain == item_domain:
                         continue
-                    similar_items.append(f'> * [{remove_pipes(sim.title)}]({sim.url}) ({domain_of_url(sim.url)})')
+                    similar_items.append(f'> * [{pdf_icon(sim_item_domain)}{remove_pipes(sim.title)}]({sim.url}) ({sim_item_domain})')
                     ids_of_written.append(sim.id)
                 if similar_items:
                     similar_items = ["\n> **See also:**"] + similar_items
@@ -423,7 +425,7 @@ class Routine:
                     remove_margin = "style='margin-bottom: 0;'"
                     previous_titles = ([f"\n<blockquote class='previous-titles' markdown='1' {remove_margin if similar_items else ''}>\n**Previous headlines:**\n"] + previous_titles + ["</blockquote>"])
                 previous_titles_text = '\n'.join(previous_titles)
-                md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{item_domain}]({item.url})]{previous_titles_text}{similar_text}\n\n{item.text}")
+                md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{pdf_icon(item_domain)}{item_domain}]({item.url})]{previous_titles_text}{similar_text}\n\n{item.text}")
             ids_of_written.append(item.id)
 
 
