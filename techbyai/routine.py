@@ -223,7 +223,8 @@ class Routine:
             Your task is to select the top ~{Settings().editorial.final_items} (but no less than {Settings().editorial.final_items - 2}) from this list to be featured in today's issue.
             Note that as your reporters worked independently, some suggestions might be duplicates (either
             same topic from different sources or even the exact same item). Make sure to select {Settings().editorial.final_items} DIFFERENT
-            items of different topics. Rank your selection from 1 to {Settings().editorial.final_items}, where 1 is the top item of today's issue.
+            items of different topics. Also, there should be no more than {Settings().editorial.max_academic_papers} items from arxiv.
+            Rank your selection from 1 to {Settings().editorial.final_items}, where 1 is the top item of today's issue.
             Return your selection as JSON, where the item ID is the key, and the value is another dictionary, holding
             your chosen rank and a list of similar item IDs to that item, if any. 
             See the example below:
@@ -317,11 +318,16 @@ class Routine:
                 if item.rank < 0:
                     continue
 
+                if 'arxiv' in domain_of_url(item.url):
+                    max_words = Settings().editorial.max_words_per_academic_paper
+                else:
+                    max_words = Settings().editorial.max_words_per_item
+
                 task = dedent(
                     f"""
                     Write a summary on {item.title} (URL: {item.url}). 
                     Follow these guidelines:
-                    - It should be no more than {Settings().editorial.max_words_per_item} words
+                    - It should be no more than {max_words} words
                     - Do NOT add a title, the editor will add it later
                     - Your response is printed as it is, so do not add any other remarks beside the summary
                     - Use Markdown syntax

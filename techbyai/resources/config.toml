@@ -26,10 +26,12 @@ cost_per_query = 0.005  # dollars
 
 [editorial]
 name = "Tech by AI"
-reporters = 3
+reporters = 3  # one is an academic reporer
 reporter_items = 6
 final_items = 7
+max_academic_papers = 2
 max_words_per_item = 150
+max_words_per_academic_paper = 200
 subject = "AI and Generative AI specifically"
 topics = [
         "Foundation Models", 
@@ -58,7 +60,6 @@ companies = [
         "Eleven Labs", 
         "Hugging Face",
         "Apple",
-        "Ollama",
-        "GitHub"
+        "Ollama"
         ]
-twitter_accounts = {"AravSrinivas" = "Aravind Srinivas", "adcock_brett" = "Brett Adcock", "satyanadella" = "Satya Nadella", "Yampeleg" = "Yam Peleg", "arthurmensch" = "Arthur Mensch", "ylecun" = "Yann LeCun", "karpathy" = "Andrej Karpathy", "AndrewYNg" = "Andrew Ng", "geoffreyhinton" = "Geoffrey Hinton"}
+twitter_accounts = {"AravSrinivas" = "Aravind Srinivas", "adcock_brett" = "Brett Adcock", "satyanadella" = "Satya Nadella", "Yampeleg" = "Yam Peleg", "arthurmensch" = "Arthur Mensch", "ylecun" = "Yann LeCun", "karpathy" = "Andrej Karpathy", "AndrewYNg" = "Andrew Ng", "geoffreyhinton" = "Geoffrey Hinton", "jeremyphoward" = "Jeremy Howard"}
