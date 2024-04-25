@@ -15,6 +15,7 @@ from .settings import Settings
 from .cost import Cost
 from .audio import Narrator
 from .archive import Archive, Embedder
+from .viewed_urls import ViewedURLs
 from .tools import WEB_TOOLS, ARXIV_TOOLS, TWITTER_TOOLS, MAGAZINE_TOOLS
 
 
@@ -26,8 +27,8 @@ class Routine:
         self.logger = get_logger()
         self.start_time = time()
         self.cost = Cost()
-        self.narrator = Narrator()
         self.archive = Archive()
+        self.viewed_urls = ViewedURLs()
 
     def topics(self, twitter_trends: list[str]) -> str:
         companies: list[str] = Settings().editorial.companies
@@ -123,7 +124,7 @@ class Routine:
         accounts: dict[str, str] = {k.strip('@'): v for k,v in result.json.items()}
         people: dict[str, str] = accounts | predefined_twitter_accounts
         self.logger.info(f"Following these people on Twitter: {[f'{v} (@{k})' for k,v in people.items()]}")
-        people_as_list = '\n'.join([f'* {v} (username: @{k})' for k,v in people.items()])
+        people_as_list = '\n'.join([f'* {v} (username: {k})' for k,v in people.items()])
 
         second_task = dedent(
             f"""
@@ -171,12 +172,11 @@ class Routine:
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             - If the title you got from the search ends with "...", visit the website and extract the full title from there
             - Make sure the URL you provide direct to the exact article you chose (and not to a some news aggregation). Search for the specific URL of the article if needed
-            - It is HIGHLY RECOMMENDED that you verify that the URLs you chose are alive using the `validate_url` tool!
             - Your response should be formatted as JSON, where the items titles (meaning: the titles of the 
-              articles you read) are the keys, and the values are the items URLs.
+              articles you read) are the keys, and the values are the items IDs.
             Example:
             ```json
-            {{"OpenAI's Sora text-to-video generator will be publicly available later this year": "https://www.theverge.com/2024/3/13/24099402/openai-text-to-video-ai-sora-public-availability"}}
+            {{"OpenAI's Sora text-to-video generator will be publicly available later this year": 367}}
             ```
             REMEMBER: You are competing with the rest of the staff on finding the most interesting items, so be
             creative in your searches, don't just copy paste the editor's instructions!
@@ -192,9 +192,9 @@ class Routine:
             in these fields and return a list of up to {Settings().editorial.reporter_items} such papers, which you believe are the
             most novel and groundbreaking from those you read. You are given the freedom of returning no papers at all if you believe there's
             nothing exciting to share with the magazine's professional readers.
-            Return your response as a JSON, where the keys are the papers names and the values are their URLs:
+            Return your response as a JSON, where the keys are the papers names and the values are their IDs:
             ```json
-            {{"Realizing limit cycles in dissipative bosonic systems": "https://arxiv.org/pdf/2401.05332"}}
+            {{"Realizing limit cycles in dissipative bosonic systems": 24}}
             ```
             Return an empty JSON if there are no results: `{{}}`
             """.strip())
@@ -210,13 +210,14 @@ class Routine:
         suggestions: list[list[ItemSuggestion]] = []
         for i, reporter_suggestions_dict in enumerate([r.json for r in results]):
             reporter_suggestions: list[ItemSuggestion] = []
-            for title, url in reporter_suggestions_dict.items():
-                reporter_suggestions.append(ItemSuggestion(title=title, url=url, reporter=self.reporters[i].name or ''))
+            for title, url_id in reporter_suggestions_dict.items():
+                url = self.viewed_urls[url_id]
+                reporter_suggestions.append(ItemSuggestion(id=url_id, title=title, url=url, reporter=self.reporters[i].name or ''))
             suggestions.append(reporter_suggestions)
         return suggestions
     
     def _select_items(self, suggestions: list[list[ItemSuggestion]]) -> list[list[ItemSuggestion]]:
-        suggestions_text = '\n'.join([f'* {s.title} (URL: {s.url}) | Item ID: {s.id}' for s in flatten(suggestions)])
+        suggestions_text = '\n'.join([f'* {s.title} | item ID: {s.id}' for s in flatten(suggestions)])
         task = dedent(
             f"""
             The list below contains the items suggestions provided by your staff:
@@ -276,9 +277,10 @@ class Routine:
         self.logger.debug(result.content)
         remaining = result.json 
 
-        for s_id, dct in ranking.items():
-            if remaining.get(s_id, {}).get('remove', False):
+        for str_suggestion_id, dct in ranking.items():
+            if remaining.get(str_suggestion_id, {}).get('remove', False):
                 continue
+            s_id = int(str_suggestion_id)
             indices = list(range(len(suggestions)))
             shuffle(indices)
             for i in indices:
@@ -288,8 +290,8 @@ class Routine:
                     idx = reporter_s_ids.index(s_id)
                     suggestion = reporter_suggestions[idx]
                     suggestion.rank = int(dct['rank'])
-                    suggestion.similar_ids = dct.get('similar', [])
-                    suggestion.previous_titles = remaining.get(s_id, {}).get('archive', [])
+                    suggestion.similar_ids = [int(x) for x in dct.get('similar', [])]
+                    suggestion.previous_titles = remaining.get(str_suggestion_id, {}).get('archive', [])
                     reporter_suggestions[idx] = suggestion
                     break
         return suggestions
@@ -298,7 +300,7 @@ class Routine:
         error_message = "<ERROR>"
         remove_message = "<REMOVE>"
         
-        def editor_task(text: str) -> str:
+        def editor_task(text: str, max_words: int) -> str:
             task = dedent(
                 f"""
                 The text below is the final article written by one of your reporters.
@@ -307,7 +309,7 @@ class Routine:
                 Also, you have the option not to use this article in you magazine, if you believe it does not mee your standards
                 or will have no value to your professional readers. 
                 - If you choose to remove this article, reply only with {remove_message}
-                - If you wish to keep it, reply only with the final version of your edited version. Remember it must not exceed {Settings().editorial.max_words_per_item}!
+                - If you wish to keep it, reply only with the final version of your edited version. It must not exceed {max_words}!
                   Also, your response will be used as it is, so do not add any other remarks but the text. 
                 - If you choose not to edit the text at all, copy the text as it is, word for word
                 """)
@@ -326,7 +328,7 @@ class Routine:
 
                 task = dedent(
                     f"""
-                    Write a summary on {item.title} (URL: {item.url}). 
+                    Read URL ID {item.id} and summarize it.
                     Follow these guidelines:
                     - It should be no more than {max_words} words
                     - Do NOT add a title, the editor will add it later
@@ -338,7 +340,7 @@ class Routine:
                 result = reporter.do(task)
                 if not error_message in result.content:
                     text = result.content
-                    edited_text = editor_task(text)
+                    edited_text = editor_task(text, max_words)
                     if remove_message in edited_text:
                         item.rank = -1
                     else:
@@ -512,7 +514,6 @@ class Routine:
         return f"[elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]"
 
     def do(self) -> None:
-        self.cost.reset()
         self.start_time = time()
 
         self.logger.info("Starting - Hiring editor", color='green')
@@ -531,7 +532,7 @@ class Routine:
 
         self.logger.info(f"Selecting top items {self._get_stats_string()}", color='green')
         suggestions = self._select_items(suggestions) 
-        
+
         self.logger.info(f"Writing articles {self._get_stats_string()}", color='green')
         items = flatten(self._write_items(suggestions))
         
@@ -549,7 +550,7 @@ class Routine:
 
         self.logger.info(f"Narrating {self._get_stats_string()}", color='green')
         recording_filepath = os.path.join(self.output_dir, filename+'.mp3')
-        output_audio = self.narrator.narrate(items, title=title_and_subtitle['title'])
+        output_audio = Narrator().narrate(items, title=title_and_subtitle['title'])
         length_seconds = int(len(output_audio) / 1000)
         output_audio.export(recording_filepath, format="mp3")
 

@@ -9,64 +9,42 @@ from googleapiclient.discovery import build
 from typing import Any, Callable
 from .color_logger import get_logger
 from .settings import Settings
-from .utils import read_pdf
+from .utils import read_pdf, domain_of_url
 from .archive import Archive
+from .viewed_urls import ViewedURLs
 from ._types import ToolsDefType
 from ._decorators import tool
 
 
-### TOOLS ###
+def _validate_url(url: str) -> bool:
+    try:
+        headers = {'User-Agent': Settings().web.user_agent}
+        response = requests.get(url, timeout=Settings().web.surf_timeout_seconds, headers=headers)
+        if not response.status_code == 200:
+            return False
+        else:
+            if domain_of_url(url) == 'twitter.com':
+                return url.split('/')[-1].isnumeric()
+            else:
+                return True
+    except:
+        return False
 
-@tool
-def web_search(query: str) -> str:
+viewed_urls = ViewedURLs()
+
+
+def _get_arxiv_paper(paper_id: str) -> str:
     """
-    Search the web for the provided query, and returns the title, URL and description of the results.
-    Results are returned as JSON.
-
-    [{
-        "title": "Welcome to My Site",
-        "url": "http://www.mysite.xyz",
-        "description": "This is my private website, see my stuff here"
-    }]
+    Returns the full text of the requested ID paper from arXiv.
     """
-    MAX_RESULTS = 10
-    sites_filter = ' '.join([f'-site:{domain}' for domain in Settings().search.blacklist])
-    results: list[dict[str, str]] = []
-    service = build("customsearch", "v1", developerKey=os.environ['GOOGLE_SEARCH_API_KEY'])
-    response = service.cse().list(
-        # Google CSE API docs: https://developers.google.com/custom-search/v1/reference/rest/v1/cse/list
-        q=f"{query} {sites_filter}", 
-        cx=os.environ['GOOGLE_SEARCH_CSE_ID'], 
-        num=MAX_RESULTS,
-        dateRestrict=f'd{Settings().search.past_days}'
-        ).execute()
-    
-    if 'items' not in response:
-        get_logger().debug(f'Query: {query} yielded no results!')
-        return "{'empty': 'No results'}"
-    
-    for result in response['items']:
-        results.append({"title": result['title'], "url": result['link'], "description": result['snippet']})
-
-    if results:
-        return json.dumps(results)
-    else:
-        return "{'empty': 'No results'}"
+    arxiv_paper = next(arxiv.Client().results(arxiv.Search(id_list=[paper_id])))
+    file_name = f'paper_{paper_id}.pdf'
+    arxiv_paper.download_pdf(filename=file_name)
+    content = read_pdf(file_name)
+    return content
 
 
-@tool
-def search_for_tweets(usernames: list[str], query: str = '') -> str:
-    """
-    Search the web for tweets from the given list of Twitter user-names.
-    Every result is provided with the page title and full URL.
-    Results are returned as JSON.
-    """
-    twitter_filter = ' OR '.join([f"site:twitter.com/{u.strip('@')}" for u in usernames])
-    return web_search(f'{query} ({twitter_filter})')
-
-
-@tool
-def visit_website(url: str) -> str:
+def _visit_website(url: str) -> str:
     """
     Goes to the provided URL and returns a simple version of the page text. Images and styling are excluded.
     """
@@ -86,29 +64,68 @@ def visit_website(url: str) -> str:
         raise RuntimeError(f"Failed to retrieve the webpage. Status code: {response.status_code}")
 
 
+### TOOLS ###
+
+
 @tool
-def validate_url(url: str) -> str:
+def web_search(query: str) -> str:
     """
-    Verifies the URL is live and returns no errors.
-    Returns "OK" if everything is fine or "ERROR" if the URL is unreachable.
+    Search the web for the provided query, and returns the title, an ID and description of the results.
+    Results are returned as JSON.
+
+    [{
+        "title": "Welcome to My Site",
+        "id": 12,
+        "description": "This is my private website, see my stuff here"
+    }]
     """
-    headers = {'User-Agent': Settings().web.user_agent}
-    response = requests.get(url, timeout=Settings().web.surf_timeout_seconds, headers=headers)
-    if response.status_code == 200:
-        return "OK"
+    MAX_RESULTS = 10
+    sites_filter = ' '.join([f'-site:{domain}' for domain in Settings().search.blacklist])
+    results: list[dict[str, str | int]] = []
+    service = build("customsearch", "v1", developerKey=os.environ['GOOGLE_SEARCH_API_KEY'])
+    response = service.cse().list(
+        # Google CSE API docs: https://developers.google.com/custom-search/v1/reference/rest/v1/cse/list
+        q=f"{query} {sites_filter}", 
+        cx=os.environ['GOOGLE_SEARCH_CSE_ID'], 
+        num=MAX_RESULTS,
+        dateRestrict=f'd{Settings().search.past_days}'
+        ).execute()
+    
+    if 'items' not in response:
+        get_logger().debug(f'Query: {query} yielded no results!')
+        return "{'empty': 'No results'}"
+    
+    for result in response['items']:
+        url = result['link']
+        if _validate_url(url):
+            url_id = viewed_urls.append(url)
+            results.append({"title": result['title'], "id": url_id, "description": result['snippet']})
+
+    if results:
+        return json.dumps(results)
     else:
-        return "ERROR"
+        return "{'empty': 'No results'}"
+
+
+@tool
+def search_for_tweets(usernames: list[str], query: str = '') -> str:
+    """
+    Search the web for tweets from the given list of Twitter user-names.
+    Every result is provided with the page title and its ID.
+    Results are returned as JSON.
+    """
+    twitter_filter = ' OR '.join([f"site:twitter.com/{u.strip('@')}" for u in usernames])
+    return web_search(f'{query} ({twitter_filter})')
 
 
 @tool
 def new_ai_research_from_arxiv() -> str:
     """
-    Returns a list of AI related papers, their IDs on arXiv, their URLs and their summaries as JSON in the following format:
+    Returns a list of AI related papers, their IDs and their summaries as JSON in the following format:
 
     [{
         "title": "Realizing limit cycles in dissipative bosonic systems",
-        "id": "2401.05332v1",
-        "url": "https://arxiv.org/pdf/2401.05332"
+        "id": 101,
         "summary": "We propose a general mechanism for generating limit cycle (LC) oscillations..."
     }]
     """
@@ -123,8 +140,8 @@ def new_ai_research_from_arxiv() -> str:
     for r in arxiv_results:
         if r.published.date() < now - timedelta(days=Settings().search.past_days):
             break
-        paper_id = r.get_short_id()
-        results.append({f"title": r.title, "id": paper_id, "url": r.pdf_url, "summary": r.summary})
+        url_id = viewed_urls.append(r.pdf_url)
+        results.append({f"title": r.title, "id": url_id, "summary": r.summary})
     
     get_logger().info(f"Found {len(results)} new papers on arXiv")
     if results:
@@ -134,19 +151,17 @@ def new_ai_research_from_arxiv() -> str:
 
 
 @tool
-def get_arxiv_paper(paper_id: str) -> str:
+def get_url_id_content(url_id: int) -> str:
     """
-    Returns the full text of the requested ID paper from arXiv.
-    The paper ID is found in its URL, usually as the last part of it.
-    For example, if the URL of a paper is "https://arxiv.org/pdf/2401.05332.pdf" 
-    or "https://arxiv.org/pdf/2401.05332", then the ID is "2401.05332"
+    Retrieves the content of the provided URL ID, which could be either a web page or an arXiv paper.
+    Returns the full plain text, formatting and images are excluded.
     """
-    arxiv_paper = next(arxiv.Client().results(arxiv.Search(id_list=[paper_id])))
-    file_name = f'paper_{paper_id}.pdf'
-    arxiv_paper.download_pdf(filename=file_name)
-    content = read_pdf(file_name)
-    return content
-
+    url = viewed_urls[url_id]
+    if 'arxiv' in domain_of_url(url):
+        paper_id = url.split('/')[-1].strip()
+        return _get_arxiv_paper(paper_id)
+    else:
+        return _visit_website(url)
 
 @tool
 def query_magazine_archive(query: str, archive: Archive) -> str:
@@ -175,24 +190,23 @@ def query_magazine_archive(query: str, archive: Archive) -> str:
             
 TOOLS_PARAMS_DEFINITIONS: ToolsDefType = {
     web_search: [("query", {"type": "string", "description": "The query to search on the web"}, True)],
-    visit_website: [("url", {"type": "string", "description": "The URL of the page to visit"}, True)],
+    get_url_id_content: [("url_id", {"type": "number", "description": "The ID provided of the URL to visit"}, True)],
     search_for_tweets: [("usernames", {"type": "array", "items": {"type": "string"}, "description": "A list of Twitter usernames to limit the search to"}, True),
                         ("query", {"type": "string", "description": "The query to search in tweets"}, False)],
     new_ai_research_from_arxiv: [],
-    get_arxiv_paper: [("paper_id", {"type": "string", "description": "The arXiv ID of the paper to fetch"}, True)],
     query_magazine_archive: [("query", {"type": "string", "description": "The query to search in the archive magazine"}, True)]
 }
 
 
-WEB_TOOLS = [web_search, visit_website, validate_url]
+WEB_TOOLS = [web_search, get_url_id_content]
 TWITTER_TOOLS = [search_for_tweets]
-ARXIV_TOOLS = [new_ai_research_from_arxiv, get_arxiv_paper]
+ARXIV_TOOLS = [new_ai_research_from_arxiv, get_url_id_content]
 MAGAZINE_TOOLS = [query_magazine_archive]
 
 
 def build_tools(functions: list[Callable]) -> list[dict[str, Any]]:
         tools = list()
-        for func in functions:
+        for func in set(functions):
             v = TOOLS_PARAMS_DEFINITIONS.get(func, [])
             params = {}
             required = []

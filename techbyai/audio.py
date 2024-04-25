@@ -22,7 +22,7 @@ class Narrator:
             title_future = executor.submit(self._narrate_title, title)
         segments = [f.result() for f in futures]
         title_segment = title_future.result()
-        self.cost += Settings().tts.cost_per_mill * sum([len(item.text) for item in ranked_items]) / 1e6
+        self.cost.add('tts_chars', amount=sum([len(item.text) for item in ranked_items]))
         output_audio = AudioSegment.empty()
         output_audio += title_segment
         for segment in segments:
@@ -44,7 +44,7 @@ class Narrator:
         now = datetime.now()
         date_str = f"{now.strftime('%B')} {ordinal_number(now.day)}, {now.year}"
         speech_input = f"{Settings().editorial.name}: {date_str} - {title}"
-        self.cost += Settings().tts.cost_per_mill * len(speech_input) / 1e6
+        self.cost.add('tts_chars', amount=len(speech_input))
         response = self.client.audio.speech.create(
             model=Settings().tts.model,
             voice=Settings().tts.voice,

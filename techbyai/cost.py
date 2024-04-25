@@ -1,31 +1,26 @@
+from .settings import Settings
+
 class Cost:
     _instance = None
-    _cost = 0.0
+    _prices: dict[str, tuple[float, float]] = Settings().costs
+    _uses: dict[str, int] = {k: 0 for k in _prices.keys()}
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(Cost, cls).__new__(cls)
         return cls._instance
 
-    def __str__(self) -> str:
-        return str(self._cost)
-
     def __call__(self, precision: int = 2) -> float:
-        return round(self._cost, precision)
-    
-    def __add__(self, other: float) -> float:
-        return self._cost + other
-    
-    def __sub__(self, other: float) -> float:
-        return self._cost - other
-    
-    def __iadd__(self, other: float):
-        self._cost += other
-        return self
-    
-    def __isub__(self, other: float):
-        self._cost -= other
-        return self
-    
-    def reset(self) -> None:
-        self._cost = 0.0
+        report = self.report()
+        total = sum([v['cost'] for _,v in report.items()])
+        return round(total, precision)
+
+    def add(self, section: str, amount: int) -> None:
+        if section not in self._uses.keys():
+            raise ValueError(f"No pricing defined for {section}!")
+        self._uses[section] += amount
+
+    def report(self) -> dict[str, dict[str, float]]:
+        compute_cost = lambda t,u: u * self._prices[t][0] / self._prices[t][1]
+        dct = {k: {'usage': v, 'cost': compute_cost(k,v)} for k,v in self._uses.items()}
+        return dct

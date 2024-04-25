@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
-from .color_logger import set_default_log_level
-from .settings import init_settings, Settings
+from .color_logger import set_default_log_level, get_logger
+from .settings import Settings
 from .routine import Routine
-from .utils import path_to_resource
+from .cost import Cost
 
 
 def run():
@@ -12,6 +12,6 @@ def run():
     args = parser.parse_args()
     
     set_default_log_level(args.log.upper())
-    init_settings([path_to_resource("config.toml")])
     Settings().archive = args.archive
     Routine().do()
+    get_logger().info(f"Costs breakdown: {Cost().report()}", color='magenta')

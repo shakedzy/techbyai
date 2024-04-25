@@ -31,10 +31,10 @@ class Assistant:
         self.archive = archive 
 
     def _compute_cost(self, completion: ChatCompletion) -> None:
-        prompt_tokens: int = completion.usage.prompt_tokens      # type: ignore
+        input_tokens: int = completion.usage.prompt_tokens      # type: ignore
         output_tokens: int = completion.usage.completion_tokens  # type: ignore
-        current_cost = (prompt_tokens * Settings().llm.input_costs_per_mill + output_tokens * Settings().llm.output_costs_per_mill) / 1e6
-        self.cost += current_cost
+        self.cost.add('input_tokens', input_tokens)
+        self.cost.add('output_tokens', output_tokens)
     
     def do(self, task: str, *, as_json: bool = False, conversation: list = []) -> AssistantResponse:
         system_prompt = f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is ' + self.name if self.name else ''}]\n{self.definition}"
@@ -76,7 +76,7 @@ class Assistant:
                     self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
                     tool_result = self.callables[tool_name](**arguments)
                     if tool_name == 'web_search':
-                        self.cost += Settings().search.cost_per_query
+                        self.cost.add('web_search', 1)
                     
                     messages.append({
                         "tool_call_id": tool_call.id,
