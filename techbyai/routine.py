@@ -42,10 +42,11 @@ class Routine:
         return ", ".join(topics_list)
 
     def _hire_editor(self) -> Assistant:
+        num_editors = 3
         assistant = Assistant(definition="You are a creative AI assistant")
         task = dedent(
             f"""
-            I need to hire an Editor-in-Chief for a daily {Settings().editorial.subject} magazine. Think of 3 different types
+            I need to hire an Editor-in-Chief for a daily {Settings().editorial.subject} magazine. Think of {num_editors} different types
             of editors and describe their characteristics.
             Your response should be a JSON, where the keys are the names of the editors (which you generate),
             and the values are their characteristics description.
@@ -63,7 +64,7 @@ class Routine:
         result = assistant.do(task, as_json=True)
         possible_editors = [{'name': k, 'definition': v} for k,v in result.json.items()]
         self.logger.debug(possible_editors)
-        selected_editor = possible_editors[randint(0,3)]
+        selected_editor = possible_editors[randint(0, num_editors-1)]
         self.logger.debug(f"Selected editor: {selected_editor['name']} - {selected_editor['definition']}")
         editor_def = f"You are the Editor-in-Chief of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {selected_editor['definition']}"
         return Assistant(definition=editor_def, name=selected_editor['name'], archive=self.archive, tools=WEB_TOOLS + ARXIV_TOOLS + TWITTER_TOOLS + MAGAZINE_TOOLS)
