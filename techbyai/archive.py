@@ -20,7 +20,7 @@ class Embedder:
     def generate_embeddings(self, texts: list[str]) -> list[Embedding]:
         texts = [text.replace('\n', ' ') for text in texts]
         response = self.client.embeddings.create(input=texts, model=self.embedding_model)
-        self.cost += (response.usage.total_tokens * Settings().embeddings.cost_per_mill / 1e6)
+        self.cost.add('embedding_tokens', amount=response.usage.total_tokens)
         embeddings = [emb.embedding for emb in response.data]
         return embeddings
 
