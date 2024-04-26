@@ -157,11 +157,12 @@ def get_url_id_content(url_id: int) -> str:
     Returns the full plain text, formatting and images are excluded.
     """
     url = viewed_urls[url_id]
-    if 'arxiv' in domain_of_url(url):
+    domain = domain_of_url(url)
+    if 'arxiv' in domain:
         paper_id = url.split('/')[-1].strip()
         return _get_arxiv_paper(paper_id)
     else:
-        return _visit_website(url)
+        return f'[From: {domain}\n]' + _visit_website(url)
 
 @tool
 def query_magazine_archive(query: str, archive: Archive) -> str:
