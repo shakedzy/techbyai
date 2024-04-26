@@ -107,7 +107,7 @@ class Routine:
             twitter_savvy = Assistant(analyst_def, name=name, tools=TWITTER_TOOLS + WEB_TOOLS)
         return reporters, twitter_savvy
     
-    def _twitter_analysis(self) -> dict[str, list[str]]:
+    def _twitter_analysis(self) -> dict[str, list[int]]:
         initial_task = dedent(
             f"""
             Come up with a list of people and influencers in the fields of {Settings().editorial.subject} which should be followed on Twitter.
@@ -134,7 +134,7 @@ class Routine:
             and return your decision as a JSON in the following format:
             ```json
             {{
-                "SPECIFIC_TOPIC": ["TWEET_URL", ...],  // this should be a list of tweets by some of the people mentioned above about this topic
+                "SPECIFIC_TOPIC": [URL_ID, ...],  // this should be a list of IDs of tweets by some of the people mentioned above about this topic
                 ...
             }}
             IMPORTANT: 
@@ -149,6 +149,7 @@ class Routine:
         result = self.twitter_analyst.do(second_task, as_json=True)
         self.logger.debug(result.content)
         trends_and_urls = result.json
+        trends_and_urls: dict[str, list[int]] = {k: [int(i) for i in v] for k,v in trends_and_urls.items()}
         self.logger.debug(f"Twitter trends and URLs: {str(trends_and_urls)}")
         return trends_and_urls
     
@@ -383,7 +384,7 @@ class Routine:
         result = self.editor.do(task, as_json=True)
         return result.json
     
-    def _write_markdown_article(self, items: list[ItemSuggestion], twitter_urls: list[str]) -> str:
+    def _write_markdown_article(self, items: list[ItemSuggestion], twitter_urls: list[int]) -> str:
         remove_pipes = lambda s: s.replace(" | ", " ").replace("|", " ")
         pdf_icon = lambda domain: "<img src=\"{{ 'images/pdf.png' | relative_url }}\" style='vertical-align: middle; width: 1.2em;' /> " if 'arxiv' in domain else ''
 
@@ -493,7 +494,7 @@ class Routine:
             })
         pd.DataFrame(rows).to_csv(os.path.join(self.output_dir, f'{filename}.csv'), header=True, index=False)
 
-    def _tweets_markdown(self, tweets_urls: list[str]) -> str:
+    def _tweets_markdown(self, tweets_urls: list[int]) -> str:
         def embedded_tweet_html(url: str) -> str:
             html = dedent(
                 f"""
@@ -504,7 +505,7 @@ class Routine:
             return '\n'.join(s.lstrip() for s in html.split('\n'))
         
         if tweets_urls:
-            htmls = [embedded_tweet_html(url) for url in tweets_urls]
+            htmls = [embedded_tweet_html(self.viewed_urls[url_id]) for url_id in tweets_urls]
             htmls = ["## Trending on Twitter"] + htmls + ['<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>']
             return '\n'.join(htmls)
         else:
@@ -523,9 +524,9 @@ class Routine:
         self.reporters, self.twitter_analyst = self._hire_reporters()
         
         self.logger.info(f"Performing Twitter trends analysis {self._get_stats_string()}", color='green')
-        twitter_trends_and_links: dict[str, list[str]] = self._twitter_analysis()
+        twitter_trends_and_links: dict[str, list[int]] = self._twitter_analysis()
         twitter_trends = list(twitter_trends_and_links.keys())
-        twitter_urls = flatten([v for _, v in twitter_trends_and_links.items()])
+        twitter_urls: list[int] = flatten([v for _, v in twitter_trends_and_links.items()])
 
         self.logger.info(f"Performing research {self._get_stats_string()}", color='green')
         suggestions = self._research(twitter_trends) 

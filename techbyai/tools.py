@@ -20,13 +20,7 @@ def _validate_url(url: str) -> bool:
     try:
         headers = {'User-Agent': Settings().web.user_agent}
         response = requests.get(url, timeout=Settings().web.surf_timeout_seconds, headers=headers)
-        if not response.status_code == 200:
-            return False
-        else:
-            if domain_of_url(url) == 'twitter.com':
-                return url.split('/')[-1].isnumeric()
-            else:
-                return True
+        return response.status_code == 200
     except:
         return False
 
