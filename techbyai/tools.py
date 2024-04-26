@@ -76,6 +76,7 @@ def web_search(query: str) -> str:
     [{
         "title": "Welcome to My Site",
         "id": 12,
+        "domain": "site.com",
         "description": "This is my private website, see my stuff here"
     }]
     """
@@ -99,7 +100,7 @@ def web_search(query: str) -> str:
         url = result['link']
         if _validate_url(url):
             url_id = viewed_urls.append(url)
-            results.append({"title": result['title'], "id": url_id, "description": result['snippet']})
+            results.append({"title": result['title'], "id": url_id, "domain": domain_of_url(url), "description": result['snippet']})
 
     if results:
         return json.dumps(results)

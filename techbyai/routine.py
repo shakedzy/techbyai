@@ -217,7 +217,7 @@ class Routine:
         return suggestions
     
     def _select_items(self, suggestions: list[list[ItemSuggestion]]) -> list[list[ItemSuggestion]]:
-        suggestions_text = '\n'.join([f'* {s.title} | item ID: {s.id}' for s in flatten(suggestions)])
+        suggestions_text = '\n'.join([f'* {s.title} (From: {domain_of_url(s.url)}) | item ID: {s.id}' for s in flatten(suggestions)])
         task = dedent(
             f"""
             The list below contains the items suggestions provided by your staff:
