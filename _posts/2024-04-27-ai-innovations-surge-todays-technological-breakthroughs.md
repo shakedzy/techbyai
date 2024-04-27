@@ -54,9 +54,6 @@ _Summarized by: Casey Kim_ [[www.bbc.com](https://www.bbc.com/news/articles/cl40
 
 Meta's investment in AI technologies has led to a share price drop. This strategic move aims to enhance innovation but worries investors about short-term profitability, highlighting the clash between long-term planning and immediate financial expectations in tech.
 
-**You might also want to read:**
-* [<img src="{{ 'images/pdf.png' | relative_url }}" style='vertical-align: middle; width: 1.2em;' /> Artificial Intelligence authors/titles recent submissions](https://arxiv.org/list/cs.AI/recent) (arxiv.org)
-
 ## Trending on Twitter
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px;">
 <div class="loading" style="width: 100%; border-left: 0px;"><a href="https://twitter.com/emilymbender/status/1783957575958171764"></a></div>
