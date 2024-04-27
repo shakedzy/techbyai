@@ -101,6 +101,7 @@ class Assistant:
                     content_json = json.loads(content)
                     final_message = True
                 except Exception as e:
+                    self.logger.warn(f"Error decoding message as JSON - {e.__class__.__name__}: {e}", color='red')
                     messages.append({
                         "role": "user",
                         "content": "The message is not formatted as a valid JSON! Return it as a valid JSON according to the format you were given"

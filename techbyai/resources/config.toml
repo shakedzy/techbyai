@@ -15,7 +15,7 @@ user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
 
 [search]
 past_days = 1
-blacklist = ['wikipedia.org', 'medium.com']
+blacklist = ['arxiv.org', 'wikipedia.org', 'medium.com']
 
 # Costs info: https://openai.com/pricing#language-models
 [costs]  # dollars
