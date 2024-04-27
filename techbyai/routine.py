@@ -444,7 +444,7 @@ class Routine:
         self.logger.info(f"Creating title for article [elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]", color='green')
         full_article = '\n\n'.join(md_ranked_articles)
         if md_inaccessible_articles:
-            full_article += ('\n\n**You might also want to read:**\n' + '\n'.join(md_inaccessible_articles))
+            full_article += ('\n\n<h3><strong>💡 More articles for you:</strong></h3>\n\n' + '\n'.join(md_inaccessible_articles))
         if twitter_urls:
             full_article += ('\n\n' + self._tweets_markdown(twitter_urls))
         full_article += ('\n\n**Other headlines:**\n' + '\n'.join(md_unranked_articles))
