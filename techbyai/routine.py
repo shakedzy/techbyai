@@ -458,7 +458,10 @@ class Routine:
             os.makedirs(output_dir)
         return output_dir
     
-    def _markdown_metadata(self, title: str, subtitle: str, audio_filename: str, audio_filepath: str, audio_duration: str) -> str:
+    def _markdown_metadata(self, items: list[ItemSuggestion], title: str, subtitle: str, audio_filename: str, audio_filepath: str, audio_duration: str) -> str:
+        headers_items = sorted([item for item in items if item.rank > 0], key=lambda s: s.rank)
+        headers = [item.title for item in headers_items]
+        headers_text = ' * ' + '<br /> * '.join(headers)
         metadata = dedent(
             f"""
             ---
@@ -473,6 +476,7 @@ class Routine:
             cost: {self.cost()}
             processing: "{self._get_elapsed_time()}"
             version: "{get_version()}"
+            headers: "{headers_text}"
             ---
             """.strip())
         return '\n'.join(s.lstrip() for s in metadata.split('\n'))
@@ -560,7 +564,7 @@ class Routine:
 
         filepath = os.path.join(self.output_dir, filename+'.md')
         with open(filepath, 'w') as f:
-            f.write(self._markdown_metadata(title=title_and_subtitle['title'], subtitle=title_and_subtitle['subtitle'], audio_filename=filename+".mp3", audio_filepath=recording_filepath, audio_duration=duration_str) + '\n\n')
+            f.write(self._markdown_metadata(items=items, title=title_and_subtitle['title'], subtitle=title_and_subtitle['subtitle'], audio_filename=filename+".mp3", audio_filepath=recording_filepath, audio_duration=duration_str) + '\n\n')
             f.write(full_article + '\n\n')  
             f.write(f'---\n### Technical details\nCreated at: {datetime.now().strftime("%d %B, %Y, %H:%M:%S")}, ' + 'using `{{ page.model }}`.\n\nProcessing time: {{ page.processing }}, cost: {{ page.cost }}$\n')
             f.write(f'<details>\n<summary>The Staff</summary>\n<div markdown="1">\nEditor: {self.editor.name}\n\n```\n{self.editor.definition}\n```\n\n')
