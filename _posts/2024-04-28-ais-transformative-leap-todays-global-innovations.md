@@ -10,6 +10,7 @@ model: gpt-4-turbo-preview
 cost: 2.76
 processing: "0:04:19.473585"
 version: "0.1.6"
+headers: "Artificial Intelligence and the Law 2024 Update: AI Regulations and Policy Developments<br />SenseNova 5.0: China's latest AI model outperforms GPT-4<br />McKinsey and Google Cloud Unlock $4 Trillion Business Value with Generative AI<br />Australia: Australian Senate to establish Select Committee on AI Regulation and Policy"
 ---
 
 # Artificial Intelligence and the Law 2024 Update: AI Regulations and Policy Developments
@@ -82,7 +83,7 @@ The Australian Senate is forming a Select Committee on AI Adoption to scrutinize
 
 <h3><strong>💡 More articles for you:</strong></h3>
 
-* [As Meta debuts its Llama 3 model, today's generative AI landscape is a different animal.](https://fortune.com/tag/artificial-intelligence/) (fortune.com)
+* [As Meta debuts its Llama 3 model, today's generative AI landscape is a different animal.](https://fortune.com/2024/04/18/meta-ai-llama-3-open-source-ai-increasing-competition/) (fortune.com)
 
 ## Trending on Twitter
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px;">
