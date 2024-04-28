@@ -10,7 +10,7 @@ model: gpt-4-turbo-preview
 cost: 2.76
 processing: "0:04:19.473585"
 version: "0.1.6"
-headers: "Artificial Intelligence and the Law 2024 Update: AI Regulations and Policy Developments<br />SenseNova 5.0: China's latest AI model outperforms GPT-4<br />McKinsey and Google Cloud Unlock $4 Trillion Business Value with Generative AI<br />Australia: Australian Senate to establish Select Committee on AI Regulation and Policy"
+headers: " * Artificial Intelligence and the Law 2024 Update: AI Regulations and Policy Developments<br /> * SenseNova 5.0: China's latest AI model outperforms GPT-4<br /> * McKinsey and Google Cloud Unlock $4 Trillion Business Value with Generative AI<br /> * Australia: Australian Senate to establish Select Committee on AI Regulation and Policy"
 ---
 
 # Artificial Intelligence and the Law 2024 Update: AI Regulations and Policy Developments
