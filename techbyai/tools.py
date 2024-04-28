@@ -12,12 +12,25 @@ from .settings import Settings
 from .utils import read_pdf, domain_of_url
 from .archive import Archive
 from .viewed_urls import ViewedURLs
+from .cost import Cost
 from ._types import ToolsDefType
 from ._decorators import tool
 
 
 def _validate_url(url: str) -> bool:
     try:
+        domain = domain_of_url(url)
+        trailing = url.split(domain)[1]
+        current_year = str(datetime.now().year)
+
+        if not any(site in domain for site in ['x.com', 'twitter.com', 'arxiv.com']):
+            # Check if current year is in URL (usually the date is part of an article's URL)
+            if current_year not in trailing:
+                # If not, assess if the URL seems long enough (as it usually is with actual articles)
+                if len(trailing) < 35:
+                    return False
+
+        # Check access to site
         headers = {'User-Agent': Settings().web.user_agent}
         response = requests.get(url, timeout=Settings().web.surf_timeout_seconds, headers=headers)
         return response.status_code == 200
@@ -25,6 +38,7 @@ def _validate_url(url: str) -> bool:
         return False
 
 viewed_urls = ViewedURLs()
+cost = Cost()
 
 
 def _get_arxiv_paper(paper_id: str) -> str:
@@ -62,7 +76,7 @@ def _visit_website(url: str) -> str:
 
 
 @tool
-def web_search(query: str) -> str:
+def web_search(query: str, *, ignore_twitter: bool = True) -> str:
     """
     Search the web for the provided query, and returns the title, an ID and description of the results.
     Results are returned as JSON.
@@ -75,16 +89,22 @@ def web_search(query: str) -> str:
     }]
     """
     MAX_RESULTS = 10
-    sites_filter = ' '.join([f'-site:{domain}' for domain in Settings().search.blacklist])
+    blacklist: list[str] = Settings().search.blacklist
+    if ignore_twitter:
+        blacklist += ['twitter.com', 'x.com']
+
+    sites_filter = ' '.join([f'-site:{domain}' for domain in blacklist])
     results: list[dict[str, str | int]] = []
     service = build("customsearch", "v1", developerKey=os.environ['GOOGLE_SEARCH_API_KEY'])
+
     response = service.cse().list(
         # Google CSE API docs: https://developers.google.com/custom-search/v1/reference/rest/v1/cse/list
         q=f"{query} {sites_filter}", 
         cx=os.environ['GOOGLE_SEARCH_CSE_ID'], 
         num=MAX_RESULTS,
         dateRestrict=f'd{Settings().search.past_days}'
-        ).execute()
+    ).execute()
+    cost.add('web_search')
     
     if 'items' not in response:
         get_logger().debug(f'Query: {query} yielded no results!')
@@ -110,7 +130,7 @@ def search_for_tweets(usernames: list[str], query: str = '') -> str:
     Results are returned as JSON.
     """
     twitter_filter = ' OR '.join([f"site:twitter.com/{u.strip('@')}" for u in usernames])
-    return web_search(f'{query} ({twitter_filter})')
+    return web_search(f'{query} ({twitter_filter})', ignore_twitter=False)
 
 
 @tool

@@ -55,8 +55,8 @@ class Assistant:
                 response_format={"type": "json_object"} if as_json else NOT_GIVEN
             )
             additional_temperature = 0.0
-            assistant_message = completion.choices[0].message
-            messages.append(assistant_message)  # type: ignore
+            assistant_message = completion.choices[0].message  # type: ignore
+            messages.append(assistant_message)                 # type: ignore
             self._compute_cost(completion)
             
             if assistant_message.tool_calls:
@@ -75,8 +75,6 @@ class Assistant:
                         arguments['archive'] = self.archive
                     self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
                     tool_result = self.callables[tool_name](**arguments)
-                    if tool_name == 'web_search':
-                        self.cost.add('web_search', 1)
                     
                     messages.append({
                         "tool_call_id": tool_call.id,

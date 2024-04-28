@@ -15,7 +15,7 @@ class Cost:
         total = sum([v['cost'] for _,v in report.items()])
         return round(total, precision)
 
-    def add(self, section: str, amount: int) -> None:
+    def add(self, section: str, amount: int = 1) -> None:
         if section not in self._uses.keys():
             raise ValueError(f"No pricing defined for {section}!")
         self._uses[section] += amount
