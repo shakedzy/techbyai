@@ -42,8 +42,6 @@ _Summarized by: Miles Vector_ [[www.maginative.com](https://www.maginative.com/a
 <blockquote class='previous-titles' markdown='1' >
 **Previous headlines:**
 
-{% assign article_title = "Maginative" | slugify %}
- * [Maginative]({{ '2024/04/28/ais-transformative-leap-todays-global-innovations#' | append: article_title | relative_url }}) 2024-04-28
 {% assign article_title = "Boston Dynamics unveils new humanoid Atlas robot for 'real-world applications'" | slugify %}
  * [Boston Dynamics unveils new humanoid Atlas robot for 'real-world applications']({{ '2024/04/19/todays-ai-frontiers-innovations-and-regulations#' | append: article_title | relative_url }}) 2024-04-19
 {% assign article_title = "Figure 01: The Robot Closest to the Humanoid Machines of Science Fiction" | slugify %}
