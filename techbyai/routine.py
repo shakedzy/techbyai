@@ -427,20 +427,20 @@ class Routine:
                     similar_items = ["\n> **See also:**"] + similar_items
                 similar_text = '\n'.join(similar_items)
 
-                previous_titles = []
+                previous_titles_series: list[pd.Series] = []
                 for title in item.previous_titles:
                     series = self.archive.get_by_title(title)
                     if not series.empty:
-                        previous_titles.append(series)
-                previous_titles_texts = []
-                if previous_titles:
-                    prev_df = pd.DataFrame(previous_titles)
+                        previous_titles_series.append(series)
+                previous_titles_texts: list[str] = []
+                if previous_titles_series:
+                    prev_df = pd.DataFrame(previous_titles_series)
                     prev_df['dt'] = pd.to_datetime(prev_df['date'])
                     prev_df = prev_df.sort_values('dt', ascending=False)
                     remove_margin = "style='margin-bottom: 0;'"
                     for _, series in prev_df.iterrows():
                         previous_titles_texts.append(f"{{% assign article_title = \"{series['title']}\" | slugify %}}\n * [{remove_pipes(series['title'])}](" + "{{ '" + series['page'].replace('-', '/', 3) + f"#' | append: article_title" + " | relative_url }}" + f") {series['date']}")
-                    previous_titles_texts = ([f"\n<blockquote class='previous-titles' markdown='1' {remove_margin if similar_items else ''}>\n**Previous headlines:**\n"] + previous_titles + ["</blockquote>"])
+                    previous_titles_texts = ([f"\n<blockquote class='previous-titles' markdown='1' {remove_margin if similar_items else ''}>\n**Previous headlines:**\n"] + previous_titles_texts + ["</blockquote>"])
                 previous_titles_text = '\n'.join(previous_titles_texts)
                 
                 md_ranked_articles.append(f"# {item.title}\n_Summarized by: {item.reporter}_ [[{pdf_icon(item_domain)}{item_domain}]({item.url})]{previous_titles_text}{similar_text}\n\n{item.text}")
