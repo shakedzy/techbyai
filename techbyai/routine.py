@@ -107,7 +107,7 @@ class Routine:
             twitter_savvy = Assistant(analyst_def, name=name, tools=TWITTER_TOOLS + WEB_TOOLS)
         return reporters, twitter_savvy
     
-    def _twitter_analysis(self) -> dict[str, list[int]]:
+    def _twitter_analysis(self) -> tuple[list[str], list[int]]:
         initial_task = dedent(
             f"""
             Come up with a list of people and influencers in the fields of {Settings().editorial.subject} which should be followed on Twitter.
@@ -134,24 +134,24 @@ class Routine:
             and return your decision as a JSON in the following format:
             ```json
             {{
-                "SPECIFIC_TOPIC": [URL_ID, ...],  // this should be a list of IDs of tweets by some of the people mentioned above about this topic
-                ...
+                "topics": ["SPECIFIC_TOPIC", ...],
+                "tweets": [URL_ID, ...]  // this should be a list of IDs of tweets by some of the people mentioned above about this topic
             }}
             IMPORTANT: 
             - Do NOT choose broad topics (i.e. "Ethics and Bias in AI", "Advancements in Natural Language Processing", and things like that)! Choose very 
               specific subjects (a new model, a new breakthrough, etc.) Prefer less topics than broad topics!
             - Search for tweets using the `search_for_tweets` tool. Remember the `query` parameter is optional! Give it a go without a query first, and use it to filter results
             - DO NOT, and I repeat - DO NOT use tweets of random users, as they might be spam. You are only allowed to use tweets posted by the people on the list!
-            - Prefer to list tweets from as many different people from those provided
+            - Prefer to list tweets from as many different people from those provided. DO NOT choose more than a single tweet per user!
             - DO NOT BE LAZY! If one search didn't yield result, try another! Don't stop trying before truing 5 different attempts!
             ```
             """.strip())
         result = self.twitter_analyst.do(second_task, as_json=True)
         self.logger.debug(result.content)
-        trends_and_urls = result.json
-        trends_and_urls: dict[str, list[int]] = {k: [int(i) for i in v] for k,v in trends_and_urls.items()}
-        self.logger.debug(f"Twitter trends and URLs: {str(trends_and_urls)}")
-        return trends_and_urls
+        trends: list[str] = result.json.get('topics', [])
+        tweets: list[int] = [int(v) for v in result.json.get('tweets', [])]
+        self.logger.debug(f"Twitter trends: {trends}")
+        return trends, tweets
     
     def _research(self, twitter_trends: list[str]) -> list[list[ItemSuggestion]]:
         editor_task = dedent(
@@ -165,11 +165,15 @@ class Routine:
         editor_response = self.editor.do(editor_task)
         guidelines = dedent(
             f"""
+            ---
             IMPORTANT GUIDELINES:
             - Come up with at least {2*Settings().editorial.reporter_items} DIFFERENT search queries. 
               For each query, search the web and read webpages to complete your assignment
-            - Consider the credibility and reliability of the sources you choose in their fields
+            - Consider the credibility and reliability of the sources you choose 
+            - Titles dont tend to end with '...' (three-dots). If it does, get the page content and get the title from it!
             - You must provide AT LEAST {Settings().editorial.reporter_items} items
+            - Only suggest content from companies sites and blogs if they discuss release of new products or services. 
+              Posts about existing services and best practices are not welcome.
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             - If the title you got from the search ends with "...", visit the website and extract the full title from there
             - Make sure the URL you provide direct to the exact article you chose (and not to a some news aggregation). Search for the specific URL of the article if needed
@@ -322,7 +326,9 @@ class Routine:
                 if item.rank < 0:
                     continue
 
-                if 'arxiv' in domain_of_url(item.url):
+                is_paper: bool = 'arxiv' in domain_of_url(item.url)
+
+                if is_paper:
                     max_words = Settings().editorial.max_words_per_academic_paper
                 else:
                     max_words = Settings().editorial.max_words_per_item
@@ -331,7 +337,7 @@ class Routine:
                     f"""
                     Read URL ID {item.id} and summarize it.
                     Follow these guidelines:
-                    - It should be no more than {max_words} words
+                    - It should be no more than {max_words} words{'. Try to use simpler English, breaking down non-intuitive or non-trivial terms to make sure all readers understand the paper and its core message' if is_paper else ''}
                     - Do NOT add a title, the editor will add it later
                     - Your response is printed as it is, so do not add any other remarks beside the summary
                     - Use Markdown syntax
@@ -372,7 +378,7 @@ class Routine:
             ---
             Write a title and subtitle for it. Title should be up to 10 words, and subtitle up to 20 words.
             Remember your magazine is a DAILY magazine, so make sure the title isn't about the whole month or year.
-            Also, make it sound professional, not amateur.
+            Also, make it sound professional, not amateur. Try making the title down-to-earth. It supposes to let the reader know what is in the article, not just be eay-catching.
             Return your response as JSON in the format below:
             ```json
             {{
@@ -536,9 +542,7 @@ class Routine:
         self.reporters, self.twitter_analyst = self._hire_reporters()
         
         self.logger.info(f"Performing Twitter trends analysis {self._get_stats_string()}", color='green')
-        twitter_trends_and_links: dict[str, list[int]] = self._twitter_analysis()
-        twitter_trends = list(twitter_trends_and_links.keys())
-        twitter_urls: list[int] = flatten([v for _, v in twitter_trends_and_links.items()])
+        twitter_trends, twitter_urls = self._twitter_analysis()
 
         self.logger.info(f"Performing research {self._get_stats_string()}", color='green')
         suggestions = self._research(twitter_trends) 
