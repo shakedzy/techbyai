@@ -1,6 +1,7 @@
 <div align="center">
     <img src="https://raw.githubusercontent.com/shakedzy/techbyai/gh-pages/images/byai_150.png"><br>
-     <a href="https://shakedzy.xyz/techbyai"><img src="https://img.shields.io/badge/see%20it%20live-techbyai.news-F68315?style=for-the-badge&labelcolor=orange"></a>
+     <a href="https://shakedzy.xyz/techbyai"><img src="https://img.shields.io/badge/see%20it%20live-techbyai.news-F68315?style=for-the-badge&labelcolor=orange"></a><br>
+     <a href="https://shakedzy.xyz/techbyai/rss/feed.xml"><img src="https://img.shields.io/badge/Subscribe%20to-RSS-F68315?style=for-the-badge&logo=rss&color=24cbd1&logoColor=white"></a>
      <a href="https://open.spotify.com/show/57LsLSXYUUPKv5Gk6y3L70"><img src="https://img.shields.io/badge/Listen%20on-Spotify-F68315?style=for-the-badge&logo=spotify&logoColor=white&color=1ed45f"></a>
 </div>
 
@@ -22,3 +23,5 @@ news by themselves, with no human intervention what-so-ever.
 
 As the content is completely AI-generated, it should be treated as such. Take everything with a grain of salt, double-check 
 facts and don't be offended. Enjoy!
+
+**More information** on the developing process of _Tech by AI_ can be found on my [blogpost on Medium](https://medium.com/shakedzy/introducing-the-first-ever-ai-magazine-podcast-made-by-ai-e87937216cd1)
