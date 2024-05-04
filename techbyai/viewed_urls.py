@@ -1,3 +1,6 @@
+from .color_logger import get_logger
+
+
 class ViewedURLs:
     _instance = None
     _memory: list[str] = []
@@ -8,7 +11,9 @@ class ViewedURLs:
         return cls._instance
 
     def __getitem__(self, i: int) -> str:
-        return self._memory[i]
+        url = self._memory[i]
+        get_logger().debug(f'Retrieving URL {i}: {url}')
+        return url
     
     def __len__(self) -> int:
         return len(self._memory)
