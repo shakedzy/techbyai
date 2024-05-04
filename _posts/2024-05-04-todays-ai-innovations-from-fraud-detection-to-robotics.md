@@ -95,9 +95,8 @@ Boston Dynamics' new electric Atlas 2.0 robot surpasses its hydraulic predecesso
 **Other headlines:**
 * [Top Trends in Robotics for 2024](https://www.designnews.com/automation/top-trends-in-robotics-for-2024)
 * [Special Report: Artificial Intelligence Fortune](https://fortune.com/packages/special-report-artificial-intelligence/)
-* [Google DeepMind at ICLR 2024 - Google DeepMind](https://deepmind.google/discover/blog/google-deepmind-at-iclr-2024/)
 * [Special Report: Artificial Intelligence Fortune](https://fortune.com/packages/special-report-artificial-intelligence/)
-* [Google DeepMind at ICLR 2024 - Google DeepMind (Duplicate)](https://deepmind.google/discover/blog/google-deepmind-at-iclr-2024/)
+
 
 ---
 ### Technical details
