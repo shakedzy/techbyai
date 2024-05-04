@@ -17,7 +17,7 @@ from ._types import ToolsDefType
 from ._decorators import tool
 
 
-def _validate_url(url: str) -> bool:
+def _validate_url(url: str, *, retrieve_title: bool = False) -> bool | str:
     try:
         domain = domain_of_url(url)
         trailing = url.split(domain)[1]
@@ -33,7 +33,18 @@ def _validate_url(url: str) -> bool:
         # Check access to site
         headers = {'User-Agent': Settings().web.user_agent}
         response = requests.get(url, timeout=Settings().web.surf_timeout_seconds, headers=headers)
-        return response.status_code == 200
+        if response.status_code == 200:
+            if retrieve_title:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                title: str | None = soup.title.string if soup.title else None
+                if title:
+                    return title
+                else:
+                    return False
+            else:
+                return True
+        else:
+            return False
     except:
         return False
 
@@ -112,9 +123,14 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
     
     for result in response['items']:
         url = result['link']
-        if _validate_url(url):
+        title: str = result['title'] or ''
+        incomplete_title: bool = title.strip().endswith('…')
+        is_valid = _validate_url(url, retrieve_title=incomplete_title)
+        if is_valid:
+            if incomplete_title:
+                title: str = is_valid  # type: ignore
             url_id = viewed_urls.add(url)
-            results.append({"title": result['title'], "id": url_id, "domain": domain_of_url(url), "description": result['snippet']})
+            results.append({"title": title, "id": url_id, "domain": domain_of_url(url), "description": result['snippet']})
 
     if results:
         return json.dumps(results)
@@ -177,7 +193,7 @@ def get_url_id_content(url_id: int) -> str:
         paper_id = url.split('/')[-1].strip()
         return _get_arxiv_paper(paper_id)
     else:
-        return f'[From: {domain}\n]' + _visit_website(url)
+        return f'[From: {domain}]\n' + _visit_website(url)
 
 @tool
 def query_magazine_archive(query: str, archive: Archive) -> str:

@@ -175,8 +175,7 @@ class Routine:
             - Only suggest content from companies sites and blogs if they discuss release of new products or services. 
               Posts about existing services and best practices are not welcome.
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
-            - If the title you got from the search ends with "...", visit the website and extract the full title from there
-            - Make sure the URL you provide direct to the exact article you chose (and not to a some news aggregation). Search for the specific URL of the article if needed
+            - Make sure the URL ID you provide direct to the exact article you chose (and not to a some news aggregation). Search for the specific URL ID of the article if needed
             - Your response should be formatted as JSON, where the items titles (meaning: the titles of the 
               articles you read) are the keys, and the values are the items IDs.
             Example:
@@ -337,7 +336,7 @@ class Routine:
                     f"""
                     Read URL ID {item.id} and summarize it.
                     Follow these guidelines:
-                    - It should be no more than {max_words} words{'. Try to use simpler English, breaking down non-intuitive or non-trivial terms to make sure all readers understand the paper and its core message' if is_paper else ''}
+                    - It should be no more than {max_words} words{'. Break down non-intuitive or non-trivial terms to make sure all readers understand the paper and its core message' if is_paper else ''}
                     - Do NOT add a title, the editor will add it later
                     - Your response is printed as it is, so do not add any other remarks beside the summary
                     - Use Markdown syntax
