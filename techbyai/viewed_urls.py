@@ -22,8 +22,11 @@ class ViewedURLs:
         self._memory = []
 
     def append(self, url: str) -> int:
-        self._memory.append(url)
-        return len(self) - 1
+        if url in self._memory:
+            return self.index(url)
+        else:
+            self._memory.append(url)
+            return len(self) - 1
     
     def index(self, url: str) -> int:
         return self._memory.index(url)
