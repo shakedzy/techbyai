@@ -113,7 +113,7 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
     for result in response['items']:
         url = result['link']
         if _validate_url(url):
-            url_id = viewed_urls.append(url)
+            url_id = viewed_urls.add(url)
             results.append({"title": result['title'], "id": url_id, "domain": domain_of_url(url), "description": result['snippet']})
 
     if results:
@@ -155,7 +155,7 @@ def new_ai_research_from_arxiv() -> str:
     for r in arxiv_results:
         if r.published.date() < now - timedelta(days=Settings().search.past_days):
             break
-        url_id = viewed_urls.append(r.pdf_url)
+        url_id = viewed_urls.add(r.pdf_url)
         results.append({f"title": r.title, "id": url_id, "summary": r.summary})
     
     get_logger().info(f"Found {len(results)} new papers on arXiv")
