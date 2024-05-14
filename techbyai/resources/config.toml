@@ -19,8 +19,8 @@ blacklist = ['arxiv.org', 'wikipedia.org', 'medium.com']
 
 # Costs info: https://openai.com/pricing#language-models
 [costs]  # dollars
-input_tokens = [10, 1e6]
-output_tokens = [30, 1e6]
+input_tokens = [5, 1e6]
+output_tokens = [15, 1e6]
 embedding_tokens = [0.02, 1e6]
 tts_chars = [15, 1e6]
 web_search = [0.005, 1]
