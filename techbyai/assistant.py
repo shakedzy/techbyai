@@ -47,13 +47,27 @@ class Assistant:
         final_message = False
         additional_temperature: float = 0.0
         while not final_message:
-            completion = self.client.chat.completions.create(
-                model=Settings().llm.model, 
-                temperature=Settings().llm.temperature + additional_temperature, 
-                messages=messages,  # type: ignore
-                tools=self.tools,   # type: ignore
-                response_format={"type": "json_object"} if as_json else NOT_GIVEN
-            )
+            try:
+                completion = self.client.chat.completions.create(
+                    model=Settings().llm.model, 
+                    temperature=Settings().llm.temperature + additional_temperature, 
+                    messages=messages,  # type: ignore
+                    tools=self.tools,   # type: ignore
+                    response_format={"type": "json_object"} if as_json else NOT_GIVEN
+                )
+            except Exception as e:
+                error_message = f'ERROR - {e.__class__.__name__}: {e}'
+                if as_json:
+                    error_message = f'{{ "error": {error_message} }}'
+                    json_error_message = json.loads(error_message)
+                else:
+                    json_error_message = {}
+                messages.append({
+                    "role": "assistant",
+                    "content": error_message
+                })
+                return AssistantResponse(content=error_message, json=json_error_message, conversation=messages)
+
             additional_temperature = 0.0
             assistant_message = completion.choices[0].message  # type: ignore
             messages.append(assistant_message)                 # type: ignore
