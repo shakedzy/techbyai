@@ -17,6 +17,10 @@ from ._types import ToolsDefType
 from ._decorators import tool
 
 
+class WebSearchNoResultsException(Exception):
+    pass
+
+
 def _validate_url(url: str, *, retrieve_title: bool = False) -> bool | str:
     try:
         domain = domain_of_url(url)
@@ -100,42 +104,48 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
     }]
     """
     MAX_RESULTS = 10
-    blacklist: list[str] = Settings().search.blacklist
-    if ignore_twitter:
-        blacklist += ['twitter.com', 'x.com']
+    try:
+        blacklist: list[str] = Settings().search.blacklist
+        if ignore_twitter:
+            blacklist += ['twitter.com', 'x.com']
 
-    sites_filter = ' '.join([f'-site:{domain}' for domain in blacklist])
-    results: list[dict[str, str | int]] = []
-    service = build("customsearch", "v1", developerKey=os.environ['GOOGLE_SEARCH_API_KEY'])
+        sites_filter = ' '.join([f'-site:{domain}' for domain in blacklist])
+        results: list[dict[str, str | int]] = []
+        service = build("customsearch", "v1", developerKey=os.environ['GOOGLE_SEARCH_API_KEY'])
 
-    response = service.cse().list(
-        # Google CSE API docs: https://developers.google.com/custom-search/v1/reference/rest/v1/cse/list
-        q=f"{query} {sites_filter}", 
-        cx=os.environ['GOOGLE_SEARCH_CSE_ID'], 
-        num=MAX_RESULTS,
-        dateRestrict=f'd{Settings().search.past_days}'
-    ).execute()
-    cost.add('web_search')
+        response = service.cse().list(
+            # Google CSE API docs: https://developers.google.com/custom-search/v1/reference/rest/v1/cse/list
+            q=f"{query} {sites_filter}", 
+            cx=os.environ['GOOGLE_SEARCH_CSE_ID'], 
+            num=MAX_RESULTS,
+            dateRestrict=f'd{Settings().search.past_days}'
+        ).execute()
+        cost.add('web_search')
+        
+        if 'items' not in response:
+            get_logger().debug(f'Query: {query} yielded no results!')
+            raise WebSearchNoResultsException()
+        
+        for result in response['items']:
+            url = result['link']
+            title: str = result['title'] or ''
+            incomplete_title: bool = title.strip().endswith('…')
+            is_valid = _validate_url(url, retrieve_title=incomplete_title)
+            if is_valid:
+                if incomplete_title:
+                    title: str = is_valid  # type: ignore
+                url_id = viewed_urls.add(url)
+                results.append({"title": title, "id": url_id, "domain": domain_of_url(url), "description": result['snippet']})
+
+        if results:
+            return json.dumps(results)
+        else:
+            raise WebSearchNoResultsException()
     
-    if 'items' not in response:
-        get_logger().debug(f'Query: {query} yielded no results!')
-        return "{'empty': 'No results'}"
-    
-    for result in response['items']:
-        url = result['link']
-        title: str = result['title'] or ''
-        incomplete_title: bool = title.strip().endswith('…')
-        is_valid = _validate_url(url, retrieve_title=incomplete_title)
-        if is_valid:
-            if incomplete_title:
-                title: str = is_valid  # type: ignore
-            url_id = viewed_urls.add(url)
-            results.append({"title": title, "id": url_id, "domain": domain_of_url(url), "description": result['snippet']})
-
-    if results:
-        return json.dumps(results)
-    else:
-        return "{'empty': 'No results'}"
+    except WebSearchNoResultsException:
+        NO_RESULTS = 'No results'
+        url_id = viewed_urls.add(NO_RESULTS)
+        return json.dumps(f"{{'empty': {NO_RESULTS} }}")
 
 
 @tool
