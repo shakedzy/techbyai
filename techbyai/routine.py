@@ -516,7 +516,7 @@ class Routine:
             html = dedent(
                 f"""
                 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px;">
-                <div class="loading" style="width: 100%; border-left: 0px;"><a href="{url}"></a></div>
+                <div class="loading" style="width: 100%; border-left: 0px;"><a href="{url}">Loading: {url.split('//', 1)[-1]}</a></div>
                 </blockquote>
                 """.strip())
             return '\n'.join(s.lstrip() for s in html.split('\n'))
