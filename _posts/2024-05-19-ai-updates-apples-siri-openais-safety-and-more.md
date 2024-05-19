@@ -61,10 +61,10 @@ Meta has launched AI updates for ads through its Advantage+ Creative feature, en
 
 ## Trending on Twitter
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px;">
-<div class="loading" style="width: 100%; border-left: 0px;"><a href="https://x.com/sama/status/1791936857594581428"></a></div>
+<div class="loading" style="width: 100%; border-left: 0px;"><a href="https://twitter.com/sama/status/1791936857594581428"></a></div>
 </blockquote>
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px;">
-<div class="loading" style="width: 100%; border-left: 0px;"><a href="https://x.com/ylecun/status/1791890883425570823"></a></div>
+<div class="loading" style="width: 100%; border-left: 0px;"><a href="https://twitter.com/ylecun/status/1791890883425570823"></a></div>
 </blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
