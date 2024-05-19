@@ -155,7 +155,7 @@ def search_for_tweets(usernames: list[str], query: str = '') -> str:
     Every result is provided with the page title and its ID.
     Results are returned as JSON.
     """
-    twitter_filter = ' OR '.join([f"site:twitter.com/{u.strip('@')}" for u in usernames])
+    twitter_filter = ' OR '.join([f"site:x.com/{u.strip('@')}" for u in usernames])
     return web_search(f'{query} ({twitter_filter})', ignore_twitter=False)
 
 
