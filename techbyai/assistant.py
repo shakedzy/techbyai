@@ -58,8 +58,8 @@ class Assistant:
             except Exception as e:
                 error_message = f'ERROR - {e.__class__.__name__}: {e}'
                 if as_json:
-                    error_message = f'{{ "error": "{error_message}" }}'
-                    json_error_message = json.loads(error_message)
+                    json_error_message = {"error": error_message}
+                    error_message = json.dumps(json_error_message)
                 else:
                     json_error_message = {}
                 messages.append({
