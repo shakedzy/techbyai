@@ -278,6 +278,8 @@ class Routine:
             Tip: Don't query just the title, try more than one query to be sure!
             """.strip())
         result = self.editor.do(second_task, as_json=True, conversation=result.conversation)
+        if 'error' in result.json.keys():
+            result = self.editor.do(second_task, as_json=True)
         self.logger.debug(result.content)
         remaining = result.json 
 
