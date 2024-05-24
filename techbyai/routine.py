@@ -21,6 +21,11 @@ from .tools import WEB_TOOLS, ARXIV_TOOLS, TWITTER_TOOLS, MAGAZINE_TOOLS
 
 class Routine:
     def __init__(self) -> None:
+        """
+        Initializes the `Editor`, providing an assistant, a list of analysts, a
+        logger, and various counters for tracking time, cost, and viewed URLs.
+
+        """
         self.editor: Assistant
         self.twitter_analyst: Assistant
         self.reporters: list[Assistant] = []
@@ -31,6 +36,22 @@ class Routine:
         self.viewed_urls = ViewedURLs()
 
     def topics(self, twitter_trends: list[str]) -> str:
+        """
+        Generates a list of editorial topics based on user-provided input. It takes
+        two lists as inputs: `companies`, which are shuffled and concatenated into
+        a single string, and `twitter_trends`, which are also shuffled and appended
+        to the list of topics. The function then returns a joined list of all the
+        topics.
+
+        Args:
+            twitter_trends (list[str]): 5-10 trending topics on Twitter that will
+                be added to the list of topics to be joined with the companies' names.
+
+        Returns:
+            str: a list of random topics, either generated from a list of companies
+            or from Twitter trends.
+
+        """
         companies: list[str] = Settings().editorial.companies
         topics_list: list[str] = Settings().editorial.topics
         if companies:
@@ -43,6 +64,16 @@ class Routine:
         return ", ".join(topics_list)
 
     def _hire_editor(self) -> Assistant:
+        """
+        Creates an Assistant with customized definition, name, and tools based on
+        user input. It generates possible editor names and descriptions using a
+        random pick from predefined options, then selects and returns the selected
+        editor's information as an Assistant instance.
+
+        Returns:
+            Assistant: an Assistant object with a custom definition, name, and tools.
+
+        """
         num_editors = 3
         assistant = Assistant(definition="You are a creative AI assistant")
         task = dedent(
@@ -71,6 +102,17 @@ class Routine:
         return Assistant(definition=editor_def, name=selected_editor['name'], archive=self.archive, tools=WEB_TOOLS + ARXIV_TOOLS + TWITTER_TOOLS + MAGAZINE_TOOLS)
     
     def _hire_reporters(self) -> tuple[list[Assistant], Assistant]:
+        """
+        Takes a task as input, which is a JSON object with characteristics of each
+        reporter to be hired for a daily magazine issue. The function returns a
+        list of Assistant instances representing the hired reporters and a single
+        Twitter analyst, along with their respective tools.
+
+        Returns:
+            tuple[list[Assistant], Assistant]: a list of `Assistant` objects, each
+            representing a reporter or analyst for a daily magazine.
+
+        """
         task = dedent(
             f"""
             You must hire {Settings().editorial.reporters} reporters to research, choose and write the articles
@@ -108,6 +150,17 @@ class Routine:
         return reporters, twitter_savvy
     
     def _twitter_analysis(self) -> tuple[list[str], list[int]]:
+        """
+        1) generates a list of people and influencers to follow on Twitter for a
+        specific field, and 2) searches Twitter for interesting and trending topics
+        discussed by those individuals, selecting up to `Settings().editorial.reporter_items`
+        topics with associated tweets.
+
+        Returns:
+            tuple[list[str], list[int]]: a list of trending topics on Twitter and
+            the corresponding tweets.
+
+        """
         initial_task = dedent(
             f"""
             Come up with a list of people and influencers in the fields of {Settings().editorial.subject} which should be followed on Twitter.
@@ -154,6 +207,20 @@ class Routine:
         return trends, tweets
     
     def _research(self, twitter_trends: list[str]) -> list[list[ItemSuggestion]]:
+        """
+        Takes in a list of editors and tasks them with researching for code news
+        and providing their findings as a JSON response.
+
+        Args:
+            twitter_trends (list[str]): 2D array of topics to look for in news
+                articles, which are automatically generated based on recent trending
+                Twitter topics.
+
+        Returns:
+            list[list[ItemSuggestion]]: a list of lists, where each inner list
+            contains item suggestions from the reporters based on their research.
+
+        """
         editor_task = dedent(
             f"""
             Brief your staff about the type of news you'd like them to look for for today's issue.
@@ -221,6 +288,22 @@ class Routine:
         return suggestions
     
     def _select_items(self, suggestions: list[list[ItemSuggestion]]) -> list[list[ItemSuggestion]]:
+        """
+        1) provides a list of items from a list of suggestions, and 2) ranks those
+        items by returning a JSON response indicating the selected items with their
+        respective rankings and lists of similar items. Additionally, it removes
+        duplicate or overly similar items from the list if necessary.
+
+        Args:
+            suggestions (list[list[ItemSuggestion]]): list of suggested items
+                provided by staff, which must be ranked and evaluated based on
+                their novelty, relevance, and quality.
+
+        Returns:
+            list[list[ItemSuggestion]]: a list of selected items, ranked and
+            categorized according to the provided guidelines.
+
+        """
         suggestions_text = '\n'.join([f'* {s.title} (From: {domain_of_url(s.url)}) | item ID: {s.id}' for s in flatten(suggestions)])
         task = dedent(
             f"""
@@ -303,10 +386,44 @@ class Routine:
         return suggestions
     
     def _write_items(self, items: list[list[ItemSuggestion]]) -> list[list[ItemSuggestion]]:
+        """
+        Takes a list of items and reporters, executes editor tasks on each item
+        using the corresponding reporter, and returns the edited items with their
+        text content.
+
+        Args:
+            items (list[list[ItemSuggestion]]): list of `ItemSuggestion` objects
+                that will be processed by the `reporter_tasks` function, which
+                contains the URL IDs and other information for each item to be summarized.
+
+        Returns:
+            list[list[ItemSuggestion]]: a list of `ItemSuggestion` objects, each
+            with a summary and an `error` field indicating whether the item was
+            removed or not.
+
+        """
         error_message = "<ERROR>"
         remove_message = "<REMOVE>"
         
         def editor_task(text: str, max_words: int) -> str:
+            """
+            Is designed to assist with editing a provided text according to a set
+            of specified guidelines. The function takes no input parameters, returns
+            an edited version of the text, and allows for either minimal or no
+            editing depending on user preferences.
+
+            Args:
+                text (str): final article written by one of your reporters that
+                    needs to be reviewed and edited based on your magazine's guidelines.
+                max_words (int): maximum number of words allowed for the edited
+                    article, and the function will only accept responses that are
+                    within this limit.
+
+            Returns:
+                str: a revised version of the provided text, if editing was deemed
+                necessary, or the original text if no changes were made.
+
+            """
             task = dedent(
                 f"""
                 The text below is the final article written by one of your reporters.
@@ -323,6 +440,23 @@ class Routine:
             return result.content
         
         def reporter_tasks(reporter: Assistant, reporter_items: list[ItemSuggestion]) -> list[ItemSuggestion]:  
+            """
+            Takes an list of items, checks if each item's rank is less than 0, and
+            then performs the following tasks for each item: summary generation,
+            editorial task completion, error handling, and ranking modification.
+
+            Args:
+                reporter (Assistant): object that performs the task of generating
+                    summaries for the given items, by executing the provided `do()`
+                    method to get the summaries.
+                reporter_items (list[ItemSuggestion]): list of items, which are
+                    summarized and edited based on predefined guidelines.
+
+            Returns:
+                list[ItemSuggestion]: a list of `reporter_item` objects, each with
+                a summarized text and an error flag.
+
+            """
             for i, item in enumerate(reporter_items):
                 if item.rank < 0:
                     continue
@@ -366,11 +500,34 @@ class Routine:
         return items_with_text
 
     def _get_elapsed_time(self) -> str:
+        """
+        Calculates and returns a timedelta object representing the elapsed time
+        between `start_time` and the current moment, based on the number of minutes
+        and seconds passed.
+
+        Returns:
+            str: a time delta representation in the format `minutes:seconds`.
+
+        """
         elapsed_time = time() - self.start_time
         delta = timedelta(minutes=elapsed_time//60, seconds=elapsed_time%60)
         return str(delta)
     
     def _create_title_and_subtitle(self, full_article: str) -> dict[str, str]:
+        """
+        Generates a title and subtitle for an article based on provided input,
+        returning them in JSON format.
+
+        Args:
+            full_article (str): text of the article that needs to be given a title
+                and subtitle, which is provided as the input for the function.
+
+        Returns:
+            dict[str, str]: a JSON object containing the generated title and
+            subtitle in the format `{ "title": "YOUR TITLE", "subtitle": "YOUR
+            SUBTITLE" }`.
+
+        """
         task = dedent(
             f"""
             The text below is the full article to be published today in your magazine:
@@ -392,6 +549,23 @@ class Routine:
         return result.json
     
     def _write_markdown_article(self, items: list[ItemSuggestion], twitter_urls: list[int]) -> str:
+        """
+        Takes an item, an list of previous articles, and an list of similar items
+        as input, then creates a Markdown article with the provided item and
+        previous/similar items information.
+
+        Args:
+            items (list[ItemSuggestion]): list of articles to be summarized and
+                ranked based on their relevance and popularity.
+            twitter_urls (list[int]): list of URLs of tweets related to the articles,
+                which are then converted into Markdown format using the
+                `_tweets_markdown` function.
+
+        Returns:
+            str: a Markdown-formatted article containing a summarized version of
+            the input article, along with related articles and social media cards.
+
+        """
         remove_pipes = lambda s: s.replace(" | ", " ").replace("|", " ")
         pdf_icon = lambda domain: "<img src=\"{{ 'images/pdf.png' | relative_url }}\" style='vertical-align: middle; width: 1.2em;' /> " if 'arxiv' in domain else ''
 
@@ -467,6 +641,14 @@ class Routine:
 
     @property
     def output_dir(self) -> str:
+        """
+        Creates a new directory if one does not already exist at the specified
+        path and returns its resolved path.
+
+        Returns:
+            str: the path of a directory where results will be stored.
+
+        """
         top_dir = pathlib.Path(__file__).parent.parent.resolve()
         output_dir = os.path.join(top_dir, "results")
         if not os.path.exists(output_dir):
@@ -474,6 +656,35 @@ class Routine:
         return output_dir
     
     def _markdown_metadata(self, items: list[ItemSuggestion], title: str, subtitle: str, audio_filename: str, audio_filepath: str, audio_duration: str) -> str:
+        """
+        Sorts items based on their rank, then extracts titles from the resulting
+        list and joins them with ' * ' followed by a blank line. It then generates
+        Markdown metadata using the item titles, audio details, and various other
+        metadata such as date, duration, file size, model, cost, and processing
+        time. Finally, it returns a joined list of all the Markdown metadata elements.
+
+        Args:
+            items (list[ItemSuggestion]): list of dictionaries containing information
+                to be added as metadata for the post, and it is sorted based on
+                the value of the `rank` key in each dictionary to determine the
+                order of the headers in the generated markdown output.
+            title (str): title of the blog post.
+            subtitle (str): 2nd line of the metadata JSON output, which displays
+                the subtitle or title of the audio content.
+            audio_filename (str): name of the audio file to be processed and used
+                as the basis for calculating various metrics related to the audio
+                duration, size, and model cost.
+            audio_filepath (str): file path of the audio file to be processed and
+                is used to calculate its size.
+            audio_duration (str): duration of the audio file in seconds, which is
+                added to the current time to calculate the total processing time.
+
+        Returns:
+            str: a series of key-value pairs representing various metadata elements
+            for an article or other text content, including title, subtitle, audio
+            filename, date, duration, and more.
+
+        """
         headers_items = sorted([item for item in items if item.rank > 0], key=lambda s: s.rank)
         headers = [item.title for item in headers_items]
         headers_text = ' * ' + '<br /> * '.join(headers)
@@ -497,6 +708,20 @@ class Routine:
         return '\n'.join(s.lstrip() for s in metadata.split('\n'))
     
     def _create_embeddings_file(self, items: list[ItemSuggestion], filename: str, item_type: str) -> None:
+        """
+        Takes a list of items with rank information as input, sorts them based on
+        their rank, generates embeddings for each item using an `Embedder`, and
+        creates a CSV file containing the relevant information for each item.
+
+        Args:
+            items (list[ItemSuggestion]): list of dictionaries that contain text
+                and rank values to be embedded into the visualization.
+            filename (str): file path where the results will be saved as a CSV file.
+            item_type (str): type of items to be generated embeddings for, and it
+                is used to specify the appropriate embedding dimensions for each
+                type of item in the list of ranked items.
+
+        """
         rows: list[dict] = []
         date = datetime.now().strftime("%Y-%m-%d")
         ranked_items = sorted([item for item in items if item.rank > 0], key=lambda s: s.rank)
@@ -514,7 +739,33 @@ class Routine:
         pd.DataFrame(rows).to_csv(os.path.join(self.output_dir, f'{filename}.csv'), header=True, index=False)
 
     def _tweets_markdown(self, tweets_urls: list[int]) -> str:
+        """
+        Takes a list of tweet URLs as input and generates an HTML code to display
+        them on a web page, with a loading animation for each URL being processed.
+
+        Args:
+            tweets_urls (list[int]): list of tweet URLs that are to be embedded
+                with the code, and it is used to generate the corresponding HTML
+                content for each tweet.
+
+        Returns:
+            str: a concatenation of HTML code snippets for each provided tweet URL.
+
+        """
         def embedded_tweet_html(url: str) -> str:
+            """
+            Generates a HTML string for a Twitter embedded tweet based on given
+            URL and formatting options.
+
+            Args:
+                url (str): URL to be loaded and displayed within a `div` element
+                    with a loading indicator.
+
+            Returns:
+                str: a string of HTML code containing a loading message and a URL
+                link to the original tweet.
+
+            """
             html = dedent(
                 f"""
                 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px;">
@@ -534,6 +785,15 @@ class Routine:
         return f"[elapsed time: {self._get_elapsed_time()}, cost: {self.cost()}$]"
 
     def do(self) -> None:
+        """
+        Generates high-quality documentation for given code by: (1) starting a
+        time clock; (2) logging various events using the `logger` object; (3)
+        hiring an editor, reporters, and a Twitter analyst; (4) performing trend
+        analysis and research; (5) selecting top items; (6) writing articles; (7)
+        composing an article's markdown content; (8) creating embeddings; and (9)
+        narrating the article into an MP3 file.
+
+        """
         self.start_time = time()
 
         self.logger.info("Starting - Hiring editor", color='green')
