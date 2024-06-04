@@ -10,7 +10,7 @@ model: gpt-4o
 cost: 0.93
 processing: "0:02:58.430365"
 version: "0.1.10"
-headers: " * 5 Things You Should Know About the New EU AI Regulation<br /> * AI tools easily create election lies from lawmaker's voices<br /> * ConcertAI to Advance Translational and Clinical Development ...<br /> * Saudi Arabia is reportedly funding a Chinese startup that aims to ...<br /> * NVIDIA Certifies New Categories of Gen AI-Ready Systems | NVIDIA ...<br /> * Adaptive Instructional Systems | springerprofessional.de<br /> * HuggingFaceFW/fineweb-edu 7 Datasets at Hugging Face"
+headers: " * 5 Things You Should Know About the New EU AI Regulation<br /> * AI tools easily create election lies from lawmaker's voices<br /> * ConcertAI to Advance Translational and Clinical Development ...<br /> * Saudi Arabia is reportedly funding a Chinese startup that aims to ...<br /> * NVIDIA Certifies New Categories of Gen AI-Ready Systems | NVIDIA ...<br /> * Adaptive Instructional Systems | springerprofessional.de<br /> * HuggingFaceFW/fineweb-edu 7 Datasets at Hugging Face"
 ---
 
 # 5 Things You Should Know About the New EU AI Regulation
