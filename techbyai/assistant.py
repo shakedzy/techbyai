@@ -21,6 +21,25 @@ class AssistantResponse:
 
 class Assistant:
     def __init__(self, definition: str, *, tools: list[Callable] = [], name: str | None = None, archive: Archive | None = None) -> None:
+        """
+        Sets up instance variables `client`, `definition`, `name`, `tools`,
+        `callables`, `logger`, `cost`, and `archive`. It also calls `build_tools()`
+        if the `tools` parameter is given, and provides default values for any
+        missing parameters.
+
+        Args:
+            definition (str): definition of a code module or package to be generated,
+                which is used by the OpenAI API to generate high-quality documentation
+                for the given code.
+            tools ([]): list of tools to be used for building the client, which
+                is used to construct the `build_tools` function that creates a
+                dictionary of callables for the client.
+            name (None): name of the generated code, which is assigned to the
+                instance attribute `name` upon initialization.
+            archive (None): dataset or file that contains the examples to be used
+                for training and evaluation.
+
+        """
         self.client = OpenAI()
         self.definition = definition
         self.name = name
@@ -31,12 +50,36 @@ class Assistant:
         self.archive = archive 
 
     def _compute_cost(self, completion: ChatCompletion) -> None:
+        """
+        Computes the cost for a given prompt based on the number of input and
+        output tokens required to generate the completion suggestions.
+
+        Args:
+            completion (ChatCompletion): usage of the completion interface, providing
+                the number of prompt tokens and completion tokens required for
+                cost calculation.
+
+        """
         input_tokens: int = completion.usage.prompt_tokens      # type: ignore
         output_tokens: int = completion.usage.completion_tokens  # type: ignore
         self.cost.add('input_tokens', input_tokens)
         self.cost.add('output_tokens', output_tokens)
 
     def _summarize_conversation(self, conversation: list[dict[str, str]]) -> list[dict[str, str]]:
+        """
+        Takes a conversation and outputs a list of summary messages, each containing
+        information on the message's role and a concise version of the original text.
+
+        Args:
+            conversation (list[dict[str, str]]): conversation or dialogue to be
+                summarized by the function.
+
+        Returns:
+            list[dict[str, str]]: a list of dictionaries, where each dictionary
+            represents a message in the conversation and contains information on
+            the message's role and a summary of its content.
+
+        """
         MAX_WORDS = 3000
         self.logger.debug("Summarizing conversation...")
 
@@ -54,6 +97,30 @@ class Assistant:
         return summarized
     
     def do(self, task: str, *, as_json: bool = False, conversation: list = [], _summarize_conversation: bool = False) -> AssistantResponse:
+        """
+        Takes a task and a list of messages as input and returns an assistant
+        response. It executes a chatbot dialogue using the client API, processing
+        the user's input, generating responses, and updating the conversation.
+
+        Args:
+            task (str): task or goal that the user wants to accomplish, and it is
+                used as the initial message to trigger the dialogue with the assistant.
+            as_json (False): JSON format for the output message, where it is True
+                (or set to True), the assistant responds with the entire conversation
+                as a JSON object; otherwise, only the final message will be returned
+                as JSON.
+            conversation ([]): pre-processed chatlog to be passed through the GPT
+                model, and it is used to train the model and generate responses
+                based on the input context provided.
+            _summarize_conversation (False): 0-based index of the last user message
+                that should be included in the response, effectively summarizing
+                the conversation before generating the final response.
+
+        Returns:
+            AssistantResponse: an Assistant response containing the user's message
+            and the generated response.
+
+        """
         if _summarize_conversation:
             conversation = self._summarize_conversation(conversation)
         
