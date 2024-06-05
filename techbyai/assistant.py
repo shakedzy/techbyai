@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
-from openai import OpenAI
+from openai import OpenAI, BadRequestError
 from openai.types.chat import ChatCompletion
 from openai._types import NOT_GIVEN
 from typing import Any, Callable
@@ -35,8 +35,28 @@ class Assistant:
         output_tokens: int = completion.usage.completion_tokens  # type: ignore
         self.cost.add('input_tokens', input_tokens)
         self.cost.add('output_tokens', output_tokens)
+
+    def _summarize_conversation(self, conversation: list[dict[str, str]]) -> list[dict[str, str]]:
+        MAX_WORDS = 3000
+        self.logger.debug("Summarizing conversation...")
+
+        summarized = []
+        count = 0
+        for message in conversation:
+            num_words = len([word for word in message['content'].split(' ') if word.strip()])
+            if num_words > MAX_WORDS:
+                s_content = self.do(f"Summarize the text below to no more than {MAX_WORDS}:\n-----\n{message['content']}")
+                count += 1
+                summarized.append({"role": message["role"], "content": s_content})
+            else:
+                summarized.append(message)
+        self.logger.debug(f"Summarized {count} messages")
+        return summarized
     
-    def do(self, task: str, *, as_json: bool = False, conversation: list = []) -> AssistantResponse:
+    def do(self, task: str, *, as_json: bool = False, conversation: list = [], _summarize_conversation: bool = False) -> AssistantResponse:
+        if _summarize_conversation:
+            conversation = self._summarize_conversation(conversation)
+        
         system_prompt = f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is ' + self.name if self.name else ''}]\n{self.definition}"
         messages = [
             {"role": "system", "content": system_prompt}
@@ -55,6 +75,11 @@ class Assistant:
                     tools=self.tools,   # type: ignore
                     response_format={"type": "json_object"} if as_json else NOT_GIVEN
                 )
+            except BadRequestError as e:
+                if not _summarize_conversation:
+                    return self.do(task=task, as_json=as_json, conversation=conversation, _summarize_conversation=True)
+                else:
+                    raise e
             except Exception as e:
                 error_message = f'ERROR - {e.__class__.__name__}: {e}'
                 if as_json:
