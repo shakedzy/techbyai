@@ -42,8 +42,9 @@ class Assistant:
 
         summarized = []
         count = 0
-        for message in conversation:
+        for i, message in enumerate(conversation, start=1):
             num_words = len([word for word in message['content'].split(' ') if word.strip()])
+            self.logger.debug(f'Message {i} by {message['role']} contains {num_words} words')
             if num_words > MAX_WORDS:
                 s_content = self.do(f"Summarize the text below to no more than {MAX_WORDS}:\n-----\n{message['content']}")
                 count += 1
