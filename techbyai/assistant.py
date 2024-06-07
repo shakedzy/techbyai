@@ -38,7 +38,7 @@ class Assistant:
 
     def _summarize_conversation(self, conversation: list[dict[str, str]]) -> list[dict[str, str]]:
         MAX_WORDS = 3000
-        self.logger.debug("Summarizing conversation...")
+        self.logger.debug("Summarizing conversation...", color='cyan')
 
         summarized = []
         count = 0
@@ -56,14 +56,15 @@ class Assistant:
     
     def do(self, task: str, *, as_json: bool = False, conversation: list = [], _summarize_conversation: bool = False) -> AssistantResponse:
         if _summarize_conversation:
-            conversation = self._summarize_conversation(conversation)
+            messages = self._summarize_conversation(conversation)
         
-        system_prompt = f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is ' + self.name if self.name else ''}]\n{self.definition}"
-        messages = [
-            {"role": "system", "content": system_prompt}
-            ] + conversation + [
-            {"role": "user", "content": task}
-        ]
+        else:
+            system_prompt = f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is ' + self.name if self.name else ''}]\n{self.definition}"
+            messages = [
+                {"role": "system", "content": system_prompt}
+                ] + conversation + [
+                {"role": "user", "content": task}
+            ]
 
         final_message = False
         additional_temperature: float = 0.0
@@ -78,7 +79,7 @@ class Assistant:
                 )
             except BadRequestError as e:
                 if not _summarize_conversation:
-                    return self.do(task=task, as_json=as_json, conversation=conversation, _summarize_conversation=True)
+                    return self.do(task=task, as_json=as_json, conversation=messages, _summarize_conversation=True)
                 else:
                     raise e
             except Exception as e:
