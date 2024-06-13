@@ -1,5 +1,6 @@
 arxiv~=2.1.0
 beautifulsoup4~=4.12.3
+cohere~=5.5.7
 dynaconf~=3.2.5
 google-api-python-client~=2.123.0
 numpy~=1.26.4

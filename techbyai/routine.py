@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from random import randint, shuffle
 from textwrap import dedent
 from concurrent.futures import ThreadPoolExecutor
-from .assistant import Assistant
+from .assistants import Assistant, OpenAIAssistant, CohereAssistant
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
 from .utils import flatten, domain_of_url, get_version
@@ -41,10 +41,19 @@ class Routine:
             topics_list.append(f"These trending topics on Twitter: {', '.join(twitter_trends)}")
         shuffle(topics_list)
         return ", ".join(topics_list)
+    
+    def _get_assistant(self, **kwargs) -> Assistant:
+        match Settings().llm.type:
+            case "openai":
+                return OpenAIAssistant(**kwargs)
+            case "cohere":
+                return CohereAssistant(**kwargs)
+            case _:
+                raise ValueError(f"Unknown LLM type {Settings().llm.type}")
 
     def _hire_editor(self) -> Assistant:
         num_editors = 3
-        assistant = Assistant(definition="You are a creative AI assistant")
+        assistant = self._get_assistant(definition="You are a creative AI assistant")
         task = dedent(
             f"""
             I need to hire an Editor-in-Chief for a daily {Settings().editorial.subject} magazine. Think of {num_editors} different types
@@ -68,7 +77,7 @@ class Routine:
         selected_editor = possible_editors[randint(0, num_editors-1)]
         self.logger.debug(f"Selected editor: {selected_editor['name']} - {selected_editor['definition']}")
         editor_def = f"You are the Editor-in-Chief of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {selected_editor['definition']}"
-        return Assistant(definition=editor_def, name=selected_editor['name'], archive=self.archive, tools=WEB_TOOLS + ARXIV_TOOLS + TWITTER_TOOLS + MAGAZINE_TOOLS)
+        return self._get_assistant(definition=editor_def, name=selected_editor['name'], archive=self.archive, tools=WEB_TOOLS + ARXIV_TOOLS + TWITTER_TOOLS + MAGAZINE_TOOLS)
     
     def _hire_reporters(self) -> tuple[list[Assistant], Assistant]:
         task = dedent(
@@ -77,10 +86,23 @@ class Routine:
             for today's issue about the latest news and trends in {Settings().editorial.subject}. 
             Describe each of the {Settings().editorial.reporters} individuals you hire for this task. 
             Your response should be a JSON, where the keys are the names of the reporters (which you generate),
-            and the values are their characteristics description. Don't write the description as a JSON too, but as a coherent and fluent text (i.e. "You are...")
+            and the values are their characteristics description, like in the following format: 
+            ```json
+            {{
+                "FULL NAME": "DESCRIPTION", 
+                ...
+            }}
+            ```
+            For example:
+            ```json
+            {{
+                "John Smith": "You are a ..."
+            }}
+            ```
+            Don't write the description as a JSON too, but as a coherent and fluent text (i.e. "You are...")
             Be creative with the names you choose, but don't go silly.
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
-            """.strip())
+            """).strip()
         result = self.editor.do(task, as_json=True)
         self.logger.debug(result.content)
         reporters_kv_list = list(result.json.items())[:Settings().editorial.reporters]
@@ -88,23 +110,36 @@ class Routine:
         for i, (name, description) in enumerate(reporters_kv_list):
             reporter_def = f"You are a reporter of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}"
             tools = ARXIV_TOOLS if i == 0 else WEB_TOOLS
-            reporters.append(Assistant(reporter_def, name=name, tools=tools))
+            reporters.append(self._get_assistant(definition=reporter_def, name=name, tools=tools))
         
         second_task = dedent(
             f"""
             You must hire a single Twitter savvy as part of your staff. This person is an analyst, the one who knows how to find the most interesting and trending information on Twitter,
             and do research for topics to write about.
             Describe this individual. 
-            Your response should be a JSON, where the keys are the names of the reporters (which you generate),
+            Your response should be a JSON, where the key are the name of the person (which you generate), like in the following format: 
+            ```json
+            {{
+                "FULL NAME": "DESCRIPTION", 
+                ...
+            }}
+            ```
+            For example:
+            ```json
+            {{
+                "John Smith": "You are a ...",
+                ...
+            }}
+            ```
             Don't write the description as a JSON too, but as a coherent and fluent text (i.e. "You are...")
             and the values are their characteristics description. The name should be different than the names of your other reporters: {list(result.json.keys())}.
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
-            """.strip())
+            """).strip()
         result = self.editor.do(second_task, as_json=True)
         self.logger.debug(result.content)
         for name, description in list(result.json.items())[:1]:
             analyst_def = f"You are a Twitter analyst, working for a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}"
-            twitter_savvy = Assistant(analyst_def, name=name, tools=TWITTER_TOOLS + WEB_TOOLS)
+            twitter_savvy = self._get_assistant(definition=analyst_def, name=name, tools=TWITTER_TOOLS + WEB_TOOLS)
         return reporters, twitter_savvy
     
     def _twitter_analysis(self) -> tuple[list[str], list[int]]:
@@ -117,7 +152,7 @@ class Routine:
             ```
             Where USERNAME is the Twitter user-name (user-handle) of the person.
             Be creative in your selection, but always choose people who are considered credible and reliable in their fields!
-            """.strip())
+            """).strip()
         result = self.twitter_analyst.do(initial_task, as_json=True)
         self.logger.debug(result.content)
         predefined_twitter_accounts: dict[str, str] = Settings().editorial.twitter_accounts
@@ -145,7 +180,7 @@ class Routine:
             - Prefer to list tweets from as many different people from those provided. DO NOT choose more than a single tweet per user!
             - DO NOT BE LAZY! If one search didn't yield result, try another! Don't stop trying before truing 5 different attempts!
             ```
-            """.strip())
+            """).strip()
         result = self.twitter_analyst.do(second_task, as_json=True)
         self.logger.debug(result.content)
         trends: list[str] = result.json.get('topics', [])
@@ -161,7 +196,7 @@ class Routine:
             {self.topics(twitter_trends)}
             Feel free to edit, add or remove topics as you wish. You may also look on the web for new ideas.
             Reply as if you speak to your reporters directly.
-            """)
+            """).strip()
         editor_response = self.editor.do(editor_task)
         guidelines = dedent(
             f"""
@@ -184,7 +219,7 @@ class Routine:
             ```
             REMEMBER: You are competing with the rest of the staff on finding the most interesting items, so be
             creative in your searches, don't just copy paste the editor's instructions!
-            """.strip())
+            """).strip()
         guidelines = '\n'.join(s.lstrip() for s in guidelines.split('\n'))
         reporters_task = editor_response.content + '\n' + guidelines
         self.logger.debug(reporters_task)
@@ -201,7 +236,7 @@ class Routine:
             {{"Realizing limit cycles in dissipative bosonic systems": 24}}
             ```
             Return an empty JSON if there are no results: `{{}}`
-            """.strip())
+            """).strip()
         
         tasks: list[str] = [reporters_task] * len(self.reporters)
         tasks[0] = arxiv_task
@@ -251,7 +286,7 @@ class Routine:
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             REMEMBER: You are being assessed by the quality of the content of your magazine, make sure to make it as 
             interesting and professional as possible!
-            """.strip())
+            """).strip()
         result = self.editor.do(task, as_json=True)
         self.logger.debug(result.content)
         ranking = result.json
@@ -276,7 +311,7 @@ class Routine:
             }
             ```
             Tip: Don't query just the title, try more than one query to be sure!
-            """.strip())
+            """).strip()
         result = self.editor.do(second_task, as_json=True, conversation=result.conversation)
         if 'error' in result.json.keys():
             result = self.editor.do(second_task, as_json=True)
@@ -318,7 +353,7 @@ class Routine:
                 - If you wish to keep it, reply only with the final version of your edited version. It must not exceed {max_words}!
                   Also, your response will be used as it is, so do not add any other remarks but the text. 
                 - If you choose not to edit the text at all, copy the text as it is, word for word
-                """)
+                """).strip()
             result = self.editor.do(f"{task}\n---\n{text}")
             return result.content
         
@@ -344,7 +379,7 @@ class Routine:
                     - Use Markdown syntax
 
                     IMPORTANT: If you encounter an error or an issue completing this task, simple respond with "{error_message}".
-                    """)
+                    """).strip()
                 result = reporter.do(task)
                 if not error_message in result.content:
                     text = result.content
@@ -387,7 +422,7 @@ class Routine:
                 "subtitle": "YOUR SUBTITLE
             }}
             ```
-            """.strip())
+            """).strip()
         result = self.editor.do(task, as_json=True)
         return result.json
     
@@ -493,7 +528,7 @@ class Routine:
             version: "{get_version()}"
             headers: "{headers_text}"
             ---
-            """.strip())
+            """).strip()
         return '\n'.join(s.lstrip() for s in metadata.split('\n'))
     
     def _create_embeddings_file(self, items: list[ItemSuggestion], filename: str, item_type: str) -> None:

@@ -1,37 +1,49 @@
 import json
-from dataclasses import dataclass, field
 from datetime import datetime
 from openai import OpenAI, BadRequestError
 from openai.types.chat import ChatCompletion
 from openai._types import NOT_GIVEN
-from typing import Any, Callable
-from .cost import Cost
-from .settings import Settings
-from .tools import build_tools
-from .color_logger import get_logger
-from .archive import Archive
+from typing import Callable, Any
+from .base import Assistant, AssistantResponse
+from ..settings import Settings
+from ..archive import Archive
+from ..tools import TOOLS_PARAMS_DEFINITIONS
 
 
-@dataclass
-class AssistantResponse:
-    content: str
-    json: dict[str, Any]
-    conversation: list = field(default_factory=list)
-
-
-class Assistant:
+class OpenAIAssistant(Assistant):
     def __init__(self, definition: str, *, tools: list[Callable] = [], name: str | None = None, archive: Archive | None = None) -> None:
+        super().__init__(definition, tools=tools, name=name, archive=archive)
         self.client = OpenAI()
-        self.definition = definition
-        self.name = name
-        self.tools = build_tools(tools) if tools else NOT_GIVEN
-        self.callables = {f.__name__: f for f in tools}
-        self.logger = get_logger()
-        self.cost = Cost()
-        self.archive = archive 
+        self.tools = self._build_tools(tools) if tools else NOT_GIVEN
+
+    @staticmethod
+    def _build_tools(functions: list[Callable]) -> list[dict[str, Any]]:
+        tools = list()
+        for func in set(functions):
+            v = TOOLS_PARAMS_DEFINITIONS["openai"].get(func, [])
+            params = {}
+            required = []
+            for p in v:
+                params[p[0]] = p[1]
+                if p[2]: 
+                    required.append(p[0])
+
+            tools.append({
+                "type": "function",
+                "function": {
+                    "name": func.__name__,
+                    "description": func.__doc__,
+                    "parameters": {
+                        "type": "object",
+                        "properties": params
+                    },
+                    "required": required
+                }
+            })
+        return tools
 
     def _compute_cost(self, completion: ChatCompletion) -> None:
-        input_tokens: int = completion.usage.prompt_tokens      # type: ignore
+        input_tokens: int = completion.usage.prompt_tokens       # type: ignore
         output_tokens: int = completion.usage.completion_tokens  # type: ignore
         self.cost.add('input_tokens', input_tokens)
         self.cost.add('output_tokens', output_tokens)
@@ -53,7 +65,7 @@ class Assistant:
                 summarized.append(message)
         self.logger.debug(f"Summarized {count} messages")
         return summarized
-    
+
     def do(self, task: str, *, as_json: bool = False, conversation: list = [], _summarize_conversation: bool = False) -> AssistantResponse:
         if _summarize_conversation:
             messages = self._summarize_conversation(conversation)
