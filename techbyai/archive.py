@@ -31,6 +31,9 @@ class Archive:
         self.logger = get_logger()
         self.db: pd.DataFrame = self._get_data_from_dir()
 
+    def __str__(self) -> str:
+        return f"Archive: [Number of items: {len(self.db.index)}]"
+
     def _get_data_from_dir(self) -> pd.DataFrame:
         embeddings_dir: str = Settings().archive
         if not embeddings_dir.endswith('/'): embeddings_dir += '/'
