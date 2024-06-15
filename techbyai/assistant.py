@@ -1,8 +1,9 @@
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 from openai import OpenAI, BadRequestError
-from openai.types.chat import ChatCompletion
+from openai.types.chat import ChatCompletion, ChatCompletionMessage, ChatCompletionMessageToolCall
 from openai._types import NOT_GIVEN
 from typing import Any, Callable
 from .cost import Cost
@@ -36,14 +37,22 @@ class Assistant:
         self.cost.add('input_tokens', input_tokens)
         self.cost.add('output_tokens', output_tokens)
 
+    def _chat_assistant_message_to_dict(self, completion_message: ChatCompletionMessage) -> dict[str, Any]:
+        message = dict()
+        message['role'] = completion_message.role
+        message['content'] = completion_message.content
+        if completion_message.tool_calls:
+            message['tool_calls'] = completion_message.tool_calls
+        return message
+
     def _summarize_conversation(self, conversation: list[dict[str, str]]) -> list[dict[str, str]]:
         MAX_WORDS = 3000
         self.logger.debug("Summarizing conversation...", color='cyan')
-
         summarized = []
         count = 0
         for i, message in enumerate(conversation, start=1):
-            num_words = len([word for word in message['content'].split(' ') if word.strip()])
+            content: str = message['content'] or ''
+            num_words = len([word for word in content.split(' ') if word.strip()])
             self.logger.debug(f"Message {i} by {message['role']} contains {num_words} words")
             if num_words > MAX_WORDS:
                 s_content = self.do(f"Summarize the text below to no more than {MAX_WORDS}:\n-----\n{message['content']}")
@@ -53,6 +62,24 @@ class Assistant:
                 summarized.append(message)
         self.logger.debug(f"Summarized {count} messages")
         return summarized
+    
+    def _run_tool_call(self, tool_call: ChatCompletionMessageToolCall) -> dict[str, str] | None:
+        tool_name = tool_call.function.name
+        if tool_name in self.callables:
+            arguments = json.loads(tool_call.function.arguments)
+            if tool_name == 'query_magazine_archive':
+                arguments['archive'] = self.archive
+            self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
+            tool_result = self.callables[tool_name](**arguments)
+            return {
+                "tool_call_id": tool_call.id,
+                "role": "tool",
+                "name": tool_name,
+                "content": tool_result
+            }
+        else:
+            self.logger.warn(f"Model requested non-existing tool: {tool_name}, skipping", color='yellow')
+            return None
     
     def do(self, task: str, *, as_json: bool = False, conversation: list = [], _summarize_conversation: bool = False) -> AssistantResponse:
         if _summarize_conversation:
@@ -96,44 +123,24 @@ class Assistant:
                 return AssistantResponse(content=error_message, json=json_error_message, conversation=messages)
 
             additional_temperature = 0.0
-            assistant_message = completion.choices[0].message  # type: ignore
-            messages.append(assistant_message)                 # type: ignore
+            assistant_message = completion.choices[0].message  
+            messages.append(self._chat_assistant_message_to_dict(assistant_message))                 
             self._compute_cost(completion)
             
             if assistant_message.tool_calls:
-                hallucination_indices: list[int] = []
-                for i, tool_call in enumerate(assistant_message.tool_calls):
-                    tool_name = tool_call.function.name
-
-                    if tool_name == "multi_tool_use.parallel":
-                        # This is a tool hallucination by GPT, it does not exist
-                        hallucination_indices.append(i)
-                        self.logger.info("Got hallucination tool request")
-                        continue
-
-                    arguments = json.loads(tool_call.function.arguments)
-                    if tool_name == 'query_magazine_archive':
-                        arguments['archive'] = self.archive
-                    self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
-                    tool_result = self.callables[tool_name](**arguments)
-                    
-                    messages.append({
-                        "tool_call_id": tool_call.id,
-                        "role": "tool",
-                        "name": tool_name,
-                        "content": tool_result
-                    })
-                
-                if hallucination_indices:
-                    for i in hallucination_indices:
-                        # Remove hallucination-tool calls, as if it never happened
-                        assistant_message.tool_calls.pop(i)
-                    
-                    if not assistant_message.tool_calls:
-                        # All tool calls were hallucinations
-                        messages.pop()  # remove the last message (as it is now just an empty list of tool calls, no tools were called)
-                        additional_temperature = .3  # increase temperature momentarily to avoid creating the same message again
-
+                succeeded_any_tool_call = False
+                with ThreadPoolExecutor() as executor:
+                    futures = [executor.submit(self._run_tool_call, tool_call) for tool_call in assistant_message.tool_calls]
+                for result in [f.result() for f in futures]:
+                    if result:
+                        succeeded_any_tool_call = True
+                        messages.append(result)
+                if not succeeded_any_tool_call:
+                    # All tool calls were hallucinations. This is a super rare case.
+                    messages.pop()  # remove the last message (this the assistant message, asking for non-existing tools)
+                    additional_temperature = .3  # increase temperature momentarily to avoid creating the same message again
+                    self.logger.warn("All tool-calls were hallucinations, increasing temperature and retrying", color="red")
+                        
             elif as_json:
                 try:
                     content: str = messages[-1].content  # type: ignore
