@@ -55,9 +55,9 @@ class Assistant:
             num_words = len([word for word in content.split(' ') if word.strip()])
             self.logger.debug(f"Message {i} by {message['role']} contains {num_words} words")
             if num_words > MAX_WORDS:
-                s_content = self.do(f"Summarize the text below to no more than {MAX_WORDS}:\n-----\n{message['content']}")
+                summarized_message = self.do(f"Summarize the text below to no more than {MAX_WORDS}:\n-----\n{message['content']}")
                 count += 1
-                summarized.append({"role": message["role"], "content": s_content})
+                summarized.append({"role": message["role"], "content": summarized_message.content})
             else:
                 summarized.append(message)
         self.logger.debug(f"Summarized {count} messages")
@@ -80,18 +80,27 @@ class Assistant:
         else:
             self.logger.warn(f"Model requested non-existing tool: {tool_name}, skipping", color='yellow')
             return None
-    
-    def do(self, task: str, *, as_json: bool = False, conversation: list = [], _summarize_conversation: bool = False) -> AssistantResponse:
-        if _summarize_conversation:
-            messages = self._summarize_conversation(conversation)
-        
+
+    def _get_assistant_error_message(self, e: Exception, *, as_json: bool, messages: list[dict[str, str]]) -> AssistantResponse:
+        error_message = f'ERROR - {e.__class__.__name__}: {e}'
+        if as_json:
+            json_error_message = {"error": error_message}
+            error_message = json.dumps(json_error_message)
         else:
-            system_prompt = f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is ' + self.name if self.name else ''}]\n{self.definition}"
-            messages = [
-                {"role": "system", "content": system_prompt}
-                ] + conversation + [
-                {"role": "user", "content": task}
-            ]
+            json_error_message = {}
+        messages.append({
+            "role": "assistant",
+            "content": error_message
+        })
+        return AssistantResponse(content=error_message, json=json_error_message, conversation=messages)
+    
+    def do(self, task: str, *, as_json: bool = False, conversation: list = []) -> AssistantResponse:
+        system_prompt = f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is ' + self.name if self.name else ''}]\n{self.definition}"
+        messages = [
+            {"role": "system", "content": system_prompt}
+            ] + conversation + [
+            {"role": "user", "content": task}
+        ]
 
         final_message = False
         additional_temperature: float = 0.0
@@ -100,27 +109,24 @@ class Assistant:
                 completion = self.client.chat.completions.create(
                     model=Settings().llm.model, 
                     temperature=Settings().llm.temperature + additional_temperature, 
-                    messages=messages,  # type: ignore
-                    tools=self.tools,   # type: ignore
+                    messages=messages,  
+                    tools=self.tools,   
                     response_format={"type": "json_object"} if as_json else NOT_GIVEN
                 )
             except BadRequestError as e:
-                if not _summarize_conversation:
-                    return self.do(task=task, as_json=as_json, conversation=messages, _summarize_conversation=True)
-                else:
-                    raise e
+                try:
+                    messages = self._summarize_conversation(messages)
+                    completion = self.client.chat.completions.create(
+                        model=Settings().llm.model, 
+                        temperature=Settings().llm.temperature + additional_temperature, 
+                        messages=messages,  
+                        tools=self.tools,   
+                        response_format={"type": "json_object"} if as_json else NOT_GIVEN
+                    )
+                except Exception as e:
+                    return self._get_assistant_error_message(e, as_json=as_json, messages=messages)
             except Exception as e:
-                error_message = f'ERROR - {e.__class__.__name__}: {e}'
-                if as_json:
-                    json_error_message = {"error": error_message}
-                    error_message = json.dumps(json_error_message)
-                else:
-                    json_error_message = {}
-                messages.append({
-                    "role": "assistant",
-                    "content": error_message
-                })
-                return AssistantResponse(content=error_message, json=json_error_message, conversation=messages)
+                return self._get_assistant_error_message(e, as_json=as_json, messages=messages)
 
             additional_temperature = 0.0
             assistant_message = completion.choices[0].message  
