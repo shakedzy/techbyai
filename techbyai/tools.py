@@ -17,6 +17,8 @@ from ._types import ToolsDefType
 from ._decorators import tool
 
 
+NO_RESULTS = 'No results'
+
 class WebSearchNoResultsException(Exception):
     pass
 
@@ -143,7 +145,6 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
             raise WebSearchNoResultsException()
     
     except WebSearchNoResultsException:
-        NO_RESULTS = 'No results'
         url_id = viewed_urls.add(NO_RESULTS)
         return json.dumps(f"{{'empty': {NO_RESULTS}, 'id': {url_id} }}")
 
@@ -188,7 +189,8 @@ def new_ai_research_from_arxiv() -> str:
     if results:
         return json.dumps(results)
     else:
-        return "{'empty': 'No results'}"
+        url_id = viewed_urls.add(NO_RESULTS)
+        return json.dumps(f"{{'empty': {NO_RESULTS}, 'id': {url_id} }}")
 
 
 @tool
