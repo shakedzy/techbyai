@@ -26,6 +26,7 @@ tts_chars = [15, 1e6]
 web_search = [0.005, 1]
 
 [editorial]
+max_cost = 5  # dollars
 name = "Tech by AI"
 reporters = 3  # one is an academic reporer
 reporter_items = 5

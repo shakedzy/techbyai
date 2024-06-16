@@ -13,15 +13,12 @@ from .utils import read_pdf, domain_of_url
 from .archive import Archive
 from .viewed_urls import ViewedURLs
 from .cost import Cost
+from .exceptions import WebSearchNoResultsException
 from ._types import ToolsDefType
 from ._decorators import tool
 
 
 NO_RESULTS = 'No results'
-
-class WebSearchNoResultsException(Exception):
-    pass
-
 
 def _validate_url(url: str, *, retrieve_title: bool = False) -> bool | str:
     try:

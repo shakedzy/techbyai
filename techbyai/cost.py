@@ -1,9 +1,12 @@
 from .settings import Settings
+from .exceptions import CostException
+
 
 class Cost:
     _instance = None
     _prices: dict[str, tuple[float, float]] = Settings().costs
     _uses: dict[str, int] = {k: 0 for k in _prices.keys()}
+    _max_cost: float = Settings().editorial.max_cost
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -19,6 +22,9 @@ class Cost:
         if section not in self._uses.keys():
             raise ValueError(f"No pricing defined for {section}!")
         self._uses[section] += amount
+        cost = self()
+        if cost > self._max_cost:
+            raise CostException(f"Cost exceeded threshold! Current cost: {cost}$ [threshold: {round(self._max_cost, 2)}$]")
 
     def report(self) -> dict[str, dict[str, float]]:
         compute_cost = lambda t,u: u * self._prices[t][0] / self._prices[t][1]
