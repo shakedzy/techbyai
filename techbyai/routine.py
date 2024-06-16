@@ -209,12 +209,15 @@ class Routine:
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(reporter.do, task, as_json=True) for reporter, task in zip(self.reporters, tasks)]
         results = [f.result() for f in futures]
-        self.logger.debug([r.content for r in results])
+        self.logger.debug(f"Reporters suggestions: {[r.content for r in results]}")
 
         suggestions: list[list[ItemSuggestion]] = []
         for i, reporter_suggestions_dict in enumerate([r.json for r in results]):
             reporter_suggestions: list[ItemSuggestion] = []
             for title, url_id in reporter_suggestions_dict.items():
+                if not url_id.isnumeric():
+                    self.logger.debug(f"Skipping item {url_id} - {title} [Non-numeric ID]")
+                    continue
                 url = self.viewed_urls[url_id]
                 reporter_suggestions.append(ItemSuggestion(id=url_id, title=title, url=url, reporter=self.reporters[i].name or ''))
             suggestions.append(reporter_suggestions)
