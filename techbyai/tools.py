@@ -145,7 +145,7 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
     except WebSearchNoResultsException:
         NO_RESULTS = 'No results'
         url_id = viewed_urls.add(NO_RESULTS)
-        return json.dumps(f"{{'empty': {NO_RESULTS} }}")
+        return json.dumps(f"{{'empty': {NO_RESULTS}, 'id': {url_id} }}")
 
 
 @tool
