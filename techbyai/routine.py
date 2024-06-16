@@ -215,9 +215,12 @@ class Routine:
         for i, reporter_suggestions_dict in enumerate([r.json for r in results]):
             reporter_suggestions: list[ItemSuggestion] = []
             for title, url_id in reporter_suggestions_dict.items():
-                if not url_id.isnumeric():
-                    self.logger.debug(f"Skipping item {url_id} - {title} [Non-numeric ID]")
-                    continue
+                if isinstance(url_id, str):
+                    if url_id.isnumeric():
+                        url_id = int(url_id)
+                    else:
+                        self.logger.debug(f"Skipping item {url_id} - {title} [Non-numeric ID]")
+                        continue
                 url = self.viewed_urls[url_id]
                 reporter_suggestions.append(ItemSuggestion(id=url_id, title=title, url=url, reporter=self.reporters[i].name or ''))
             suggestions.append(reporter_suggestions)
