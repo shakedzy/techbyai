@@ -143,7 +143,7 @@ class Assistant:
                         
             elif as_json:
                 try:
-                    content: str = messages[-1].content  # type: ignore
+                    content: str = assistant_message.content or ''
                     content_json = json.loads(content)
                     final_message = True
                 except Exception as e:
@@ -153,7 +153,7 @@ class Assistant:
                         "content": "The message is not formatted as a valid JSON! Return it as a valid JSON according to the format you were given"
                     })
             else:
-                content = messages[-1].content  # type: ignore
+                content = assistant_message.content or ''
                 content_json = {}
                 final_message = True
         
