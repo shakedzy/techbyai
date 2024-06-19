@@ -48,7 +48,6 @@ class Assistant:
     def _summarize_conversation(self, conversation: list[dict[str, str]]) -> list[dict[str, str]]:
         MAX_WORDS = 3000
         self.logger.debug("Summarizing conversation...", color='cyan')
-        summarized = []
         count = 0
         for i, message in enumerate(conversation, start=1):
             content: str = message['content'] or ''
@@ -57,18 +56,9 @@ class Assistant:
             if num_words > MAX_WORDS:
                 summarized_response = self.do(f"Summarize the text below to no more than {MAX_WORDS}:\n-----\n{message['content']}")
                 count += 1
-                summarized_message = {
-                    "role": message["role"], 
-                    "content": summarized_response.content
-                }
-                for k in ['name', 'tool_calls', 'tool_call_id']:
-                    if k in message:
-                        summarized_message[k] = message[k]
-                summarized.append(summarized_message)
-            else:
-                summarized.append(message)
+                message['content'] = summarized_response.content
         self.logger.debug(f"Summarized {count} messages")
-        return summarized
+        return conversation
     
     def _run_tool_call(self, tool_call: ChatCompletionMessageToolCall) -> dict[str, str] | None:
         tool_name = tool_call.function.name
