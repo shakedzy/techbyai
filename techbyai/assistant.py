@@ -55,9 +55,16 @@ class Assistant:
             num_words = len([word for word in content.split(' ') if word.strip()])
             self.logger.debug(f"Message {i} by {message['role']} contains {num_words} words")
             if num_words > MAX_WORDS:
-                summarized_message = self.do(f"Summarize the text below to no more than {MAX_WORDS}:\n-----\n{message['content']}")
+                summarized_response = self.do(f"Summarize the text below to no more than {MAX_WORDS}:\n-----\n{message['content']}")
                 count += 1
-                summarized.append({"role": message["role"], "content": summarized_message.content})
+                summarized_message = {
+                    "role": message["role"], 
+                    "content": summarized_response.content
+                }
+                for k in ['name', 'tool_calls', 'tool_call_id']:
+                    if k in message:
+                        summarized_message[k] = message[k]
+                summarized.append(summarized_message)
             else:
                 summarized.append(message)
         self.logger.debug(f"Summarized {count} messages")
