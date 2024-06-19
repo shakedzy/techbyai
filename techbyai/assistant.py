@@ -106,8 +106,8 @@ class Assistant:
                 completion = self.client.chat.completions.create(
                     model=Settings().llm.model, 
                     temperature=Settings().llm.temperature + additional_temperature, 
-                    messages=messages,  
-                    tools=self.tools,   
+                    messages=messages,  # type: ignore
+                    tools=self.tools,   # type: ignore
                     response_format={"type": "json_object"} if as_json else NOT_GIVEN
                 )
             except BadRequestError as e:
@@ -116,8 +116,8 @@ class Assistant:
                     completion = self.client.chat.completions.create(
                         model=Settings().llm.model, 
                         temperature=Settings().llm.temperature + additional_temperature, 
-                        messages=messages,  
-                        tools=self.tools,   
+                        messages=messages,  # type: ignore  
+                        tools=self.tools,   # type: ignore
                         response_format={"type": "json_object"} if as_json else NOT_GIVEN
                     )
                 except Exception as e:
