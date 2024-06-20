@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from .color_logger import get_logger
 from .settings import Settings
 from .cost import Cost
-from ._types import Embedding
+from .package_types import Embedding
 
 
 class Embedder:

@@ -1,7 +1,7 @@
 import logging
 from types import TracebackType
 from typing import Mapping, Dict
-from ._types import Color
+from .package_types import Color
 
 _DEFAULT_LOG_LEVEL = logging.INFO
 _DEFAULT_LOGGER_NAME = "techbyai"

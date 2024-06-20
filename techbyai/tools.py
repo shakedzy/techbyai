@@ -14,8 +14,8 @@ from .archive import Archive
 from .viewed_urls import ViewedURLs
 from .cost import Cost
 from .exceptions import WebSearchNoResultsException
-from ._types import ToolsDefType
-from ._decorators import tool
+from .package_types import ToolsDefType
+from .decorators import tool
 
 
 NO_RESULTS = 'No results'
