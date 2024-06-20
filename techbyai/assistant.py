@@ -5,7 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 from openai import OpenAI, BadRequestError
 from openai.types.chat import ChatCompletion, ChatCompletionMessage, ChatCompletionMessageToolCall
 from openai._types import NOT_GIVEN
-from typing import Any, Callable
+from pydantic import BaseModel, RootModel, ValidationError
+from typing import Any, Callable, Type
 from .cost import Cost
 from .settings import Settings
 from .tools import build_tools
@@ -91,7 +92,7 @@ class Assistant:
         })
         return AssistantResponse(content=error_message, json=json_error_message, conversation=messages)
     
-    def do(self, task: str, *, as_json: bool = False, conversation: list = []) -> AssistantResponse:
+    def do(self, task: str, *, json_schema: Type[BaseModel] | None = None, conversation: list = []) -> AssistantResponse:
         system_prompt = f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is ' + self.name if self.name else ''}]\n{self.definition}"
         messages = [
             {"role": "system", "content": system_prompt}
@@ -108,7 +109,7 @@ class Assistant:
                     temperature=Settings().llm.temperature + additional_temperature, 
                     messages=messages,  # type: ignore
                     tools=self.tools,   # type: ignore
-                    response_format={"type": "json_object"} if as_json else NOT_GIVEN
+                    response_format={"type": "json_object"} if json_schema else NOT_GIVEN
                 )
             except BadRequestError as e:
                 try:
@@ -118,12 +119,12 @@ class Assistant:
                         temperature=Settings().llm.temperature + additional_temperature, 
                         messages=messages,  # type: ignore  
                         tools=self.tools,   # type: ignore
-                        response_format={"type": "json_object"} if as_json else NOT_GIVEN
+                        response_format={"type": "json_object"} if json_schema else NOT_GIVEN
                     )
                 except Exception as e:
-                    return self._get_assistant_error_message(e, as_json=as_json, messages=messages)
+                    return self._get_assistant_error_message(e, as_json=json_schema is not None, messages=messages)
             except Exception as e:
-                return self._get_assistant_error_message(e, as_json=as_json, messages=messages)
+                return self._get_assistant_error_message(e, as_json=json_schema is not None, messages=messages)
 
             additional_temperature = 0.0
             assistant_message = completion.choices[0].message  
@@ -144,11 +145,19 @@ class Assistant:
                     additional_temperature = .3  # increase temperature momentarily to avoid creating the same message again
                     self.logger.warn("All tool-calls were hallucinations, increasing temperature and retrying", color="red")
                         
-            elif as_json:
+            elif json_schema:
                 try:
                     content: str = assistant_message.content or ''
-                    content_json = json.loads(content)
+                    loaded_json: dict = json.loads(content)
+                    pydantic_json_model = json_schema(root=loaded_json) if issubclass(json_schema, RootModel) else json_schema(**loaded_json)
+                    content_json = pydantic_json_model.model_dump(mode='json')
                     final_message = True
+                except ValidationError as e:
+                    self.logger.warn(f"Got JSON message with incorrect schema:\n{e.json(indent=2)}", color='red')
+                    messages.append({
+                        "role": "user",
+                        "content": "This JSON message is not formatted as requested! Return a JSON according to the format you were given"
+                    })
                 except Exception as e:
                     self.logger.warn(f"Error decoding message as JSON - {e.__class__.__name__}: {e}", color='red')
                     messages.append({

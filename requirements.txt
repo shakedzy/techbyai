@@ -5,6 +5,7 @@ google-api-python-client~=2.123.0
 numpy~=1.26.4
 openai~=1.14.3
 pandas~=2.2.2
+pydantic~=2.7.2
 pydub~=0.25.1
 pypdf~=4.1.0
 requests~=2.31.0

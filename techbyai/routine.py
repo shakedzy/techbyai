@@ -17,6 +17,7 @@ from .audio import Narrator
 from .archive import Archive, Embedder
 from .viewed_urls import ViewedURLs
 from .tools import WEB_TOOLS, ARXIV_TOOLS, TWITTER_TOOLS, MAGAZINE_TOOLS
+from .schemas import StringStringJSONWithCustomKeys, StringIntJSONWithCustomKeys, TweetsAndTrends, SelectedItems, RemovableItems, TitleAndSubtitle
 
 
 class Routine:
@@ -62,7 +63,7 @@ class Routine:
             Be original with the names you choose, but don't go silly.
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
             """.strip())
-        result = assistant.do(task, as_json=True)
+        result = assistant.do(task, json_schema=StringStringJSONWithCustomKeys)
         possible_editors = [{'name': k, 'definition': v} for k,v in result.json.items()]
         self.logger.debug(possible_editors)
         selected_editor = possible_editors[randint(0, num_editors-1)]
@@ -81,7 +82,7 @@ class Routine:
             Be creative with the names you choose, but don't go silly.
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
             """.strip())
-        result = self.editor.do(task, as_json=True)
+        result = self.editor.do(task, json_schema=StringStringJSONWithCustomKeys)
         self.logger.debug(result.content)
         reporters_kv_list = list(result.json.items())[:Settings().editorial.reporters]
         reporters = []
@@ -100,7 +101,7 @@ class Routine:
             and the values are their characteristics description. The name should be different than the names of your other reporters: {list(result.json.keys())}.
             IMPORTANT: Describe their characteristics as if you are talking to each one of them, in second body.
             """.strip())
-        result = self.editor.do(second_task, as_json=True)
+        result = self.editor.do(second_task, json_schema=StringStringJSONWithCustomKeys)
         self.logger.debug(result.content)
         for name, description in list(result.json.items())[:1]:
             analyst_def = f"You are a Twitter analyst, working for a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}"
@@ -118,7 +119,7 @@ class Routine:
             Where USERNAME is the Twitter user-name (user-handle) of the person.
             Be creative in your selection, but always choose people who are considered credible and reliable in their fields!
             """.strip())
-        result = self.twitter_analyst.do(initial_task, as_json=True)
+        result = self.twitter_analyst.do(initial_task, json_schema=StringStringJSONWithCustomKeys)
         self.logger.debug(result.content)
         predefined_twitter_accounts: dict[str, str] = Settings().editorial.twitter_accounts
         accounts: dict[str, str] = {k.strip('@'): v for k,v in result.json.items()}
@@ -146,7 +147,7 @@ class Routine:
             - DO NOT BE LAZY! If one search didn't yield result, try another! Don't stop trying before truing 5 different attempts!
             ```
             """.strip())
-        result = self.twitter_analyst.do(second_task, as_json=True)
+        result = self.twitter_analyst.do(second_task, json_schema=TweetsAndTrends)
         self.logger.debug(result.content)
         trends: list[str] = result.json.get('topics', [])
         tweets: list[int] = [int(v) for v in result.json.get('tweets', [])]
@@ -207,7 +208,7 @@ class Routine:
         tasks[0] = arxiv_task
 
         with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(reporter.do, task, as_json=True) for reporter, task in zip(self.reporters, tasks)]
+            futures = [executor.submit(reporter.do, task, json_schema=StringIntJSONWithCustomKeys) for reporter, task in zip(self.reporters, tasks)]
         results = [f.result() for f in futures]
         self.logger.debug(f"Reporters suggestions: {[r.content for r in results]}")
 
@@ -215,12 +216,6 @@ class Routine:
         for i, reporter_suggestions_dict in enumerate([r.json for r in results]):
             reporter_suggestions: list[ItemSuggestion] = []
             for title, url_id in reporter_suggestions_dict.items():
-                if isinstance(url_id, str):
-                    if url_id.isnumeric():
-                        url_id = int(url_id)
-                    else:
-                        self.logger.debug(f"Skipping item {url_id} - {title} [Non-numeric ID]")
-                        continue
                 url = self.viewed_urls[url_id]
                 reporter_suggestions.append(ItemSuggestion(id=url_id, title=title, url=url, reporter=self.reporters[i].name or ''))
             suggestions.append(reporter_suggestions)
@@ -258,7 +253,7 @@ class Routine:
             REMEMBER: You are being assessed by the quality of the content of your magazine, make sure to make it as 
             interesting and professional as possible!
             """.strip())
-        result = self.editor.do(task, as_json=True)
+        result = self.editor.do(task, json_schema=SelectedItems)
         self.logger.debug(result.content)
         ranking = result.json
 
@@ -283,9 +278,10 @@ class Routine:
             ```
             Tip: Don't query just the title, try more than one query to be sure!
             """.strip())
-        result = self.editor.do(second_task, as_json=True, conversation=result.conversation)
+        result = self.editor.do(second_task, json_schema=RemovableItems, conversation=result.conversation)
         if 'error' in result.json.keys():
-            result = self.editor.do(second_task, as_json=True)
+            # Remove history to make conversation lighter
+            result = self.editor.do(second_task, json_schema=RemovableItems)
         self.logger.debug(result.content)
         remaining = result.json 
 
@@ -394,7 +390,7 @@ class Routine:
             }}
             ```
             """.strip())
-        result = self.editor.do(task, as_json=True)
+        result = self.editor.do(task, json_schema=TitleAndSubtitle)
         return result.json
     
     def _write_markdown_article(self, items: list[ItemSuggestion], twitter_urls: list[int]) -> str:
