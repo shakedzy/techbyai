@@ -20,6 +20,16 @@ from .decorators import tool
 
 NO_RESULTS = 'No results'
 
+
+def _validate_published_date(google_search_result: dict[str, Any]) -> bool:
+    published_date: str | None = google_search_result.get('pagemap', {}).get('metatags', [{}])[0].get('article:published_time', None)
+    if not published_date: 
+        return False
+    dt = datetime.strptime(published_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+    date_cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=Settings().search.past_days)
+    return dt >= date_cutoff
+
+
 def _validate_url(url: str, *, retrieve_title: bool = False) -> bool | str:
     try:
         domain = domain_of_url(url)
@@ -90,7 +100,7 @@ def _visit_website(url: str) -> str:
 
 
 @tool
-def web_search(query: str, *, ignore_twitter: bool = True) -> str:
+def web_search(query: str, *, ignore_twitter: bool = True, force_published_date: bool = True) -> str:
     """
     Search the web for the provided query, and returns the title, an ID and description of the results.
     Results are returned as JSON.
@@ -126,9 +136,13 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
             raise WebSearchNoResultsException()
         
         for result in response['items']:
+            if force_published_date:
+                is_date_valid = _validate_published_date(result)
+                if not is_date_valid:
+                    continue
             url = result['link']
-            title: str = result['title'] or ''
-            incomplete_title: bool = title.strip().endswith('…')
+            title: str = (result['title'] or '').strip()
+            incomplete_title: bool = title.endswith('…') or title.endswith('...')
             is_valid = _validate_url(url, retrieve_title=incomplete_title)
             if is_valid:
                 if incomplete_title:
@@ -154,7 +168,7 @@ def search_for_tweets(usernames: list[str], query: str = '') -> str:
     Results are returned as JSON.
     """
     twitter_filter = ' OR '.join([f"site:twitter.com/{u.strip('@')}" for u in usernames])
-    return web_search(f'{query} ({twitter_filter})', ignore_twitter=False)
+    return web_search(f'{query} ({twitter_filter})', ignore_twitter=False, force_published_date=False)
 
 
 @tool
