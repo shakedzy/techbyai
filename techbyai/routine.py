@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 from random import randint, shuffle
 from textwrap import dedent
 from concurrent.futures import ThreadPoolExecutor
-from .assistant import Assistant
+from openai import OpenAI
+from .assistants import OpenAIAssistant
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
 from .utils import flatten, domain_of_url, get_version
@@ -22,14 +23,15 @@ from .schemas import StringStringJSONWithCustomKeys, StringIntJSONWithCustomKeys
 
 class Routine:
     def __init__(self) -> None:
-        self.editor: Assistant
-        self.twitter_analyst: Assistant
-        self.reporters: list[Assistant] = []
+        self.editor: OpenAIAssistant
+        self.twitter_analyst: OpenAIAssistant
+        self.reporters: list[OpenAIAssistant] = []
         self.logger = get_logger()
         self.start_time = time()
         self.cost = Cost()
         self.archive = Archive()
         self.viewed_urls = ViewedURLs()
+        self.client = OpenAI()
 
     def topics(self, twitter_trends: list[str]) -> str:
         companies: list[str] = Settings().editorial.companies
@@ -43,9 +45,9 @@ class Routine:
         shuffle(topics_list)
         return ", ".join(topics_list)
 
-    def _hire_editor(self) -> Assistant:
+    def _hire_editor(self) -> OpenAIAssistant:
         num_editors = 3
-        assistant = Assistant(definition="You are a creative AI assistant")
+        assistant = OpenAIAssistant(definition="You are a creative AI assistant", client=self.client)
         task = dedent(
             f"""
             I need to hire an Editor-in-Chief for a daily {Settings().editorial.subject} magazine. Think of {num_editors} different types
@@ -69,9 +71,9 @@ class Routine:
         selected_editor = possible_editors[randint(0, num_editors-1)]
         self.logger.debug(f"Selected editor: {selected_editor['name']} - {selected_editor['definition']}")
         editor_def = f"You are the Editor-in-Chief of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {selected_editor['definition']}"
-        return Assistant(definition=editor_def, name=selected_editor['name'], archive=self.archive, tools=WEB_TOOLS + ARXIV_TOOLS + TWITTER_TOOLS + MAGAZINE_TOOLS)
+        return OpenAIAssistant(definition=editor_def, client=self.client, name=selected_editor['name'], archive=self.archive, tools=WEB_TOOLS + ARXIV_TOOLS + TWITTER_TOOLS + MAGAZINE_TOOLS)
     
-    def _hire_reporters(self) -> tuple[list[Assistant], Assistant]:
+    def _hire_reporters(self) -> tuple[list[OpenAIAssistant], OpenAIAssistant]:
         task = dedent(
             f"""
             You must hire {Settings().editorial.reporters} reporters to research, choose and write the articles
@@ -89,7 +91,7 @@ class Routine:
         for i, (name, description) in enumerate(reporters_kv_list):
             reporter_def = f"You are a reporter of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}"
             tools = ARXIV_TOOLS if i == 0 else WEB_TOOLS
-            reporters.append(Assistant(reporter_def, name=name, tools=tools))
+            reporters.append(OpenAIAssistant(reporter_def, client=self.client, name=name, tools=tools))
         
         second_task = dedent(
             f"""
@@ -105,7 +107,7 @@ class Routine:
         self.logger.debug(result.content)
         for name, description in list(result.json.items())[:1]:
             analyst_def = f"You are a Twitter analyst, working for a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}"
-            twitter_savvy = Assistant(analyst_def, name=name, tools=TWITTER_TOOLS + WEB_TOOLS)
+            twitter_savvy = OpenAIAssistant(analyst_def, client=self.client, name=name, tools=TWITTER_TOOLS + WEB_TOOLS)
         return reporters, twitter_savvy
     
     def _twitter_analysis(self) -> tuple[list[str], list[int]]:
@@ -324,7 +326,7 @@ class Routine:
             result = self.editor.do(f"{task}\n---\n{text}")
             return result.content
         
-        def reporter_tasks(reporter: Assistant, reporter_items: list[ItemSuggestion]) -> list[ItemSuggestion]:  
+        def reporter_tasks(reporter: OpenAIAssistant, reporter_items: list[ItemSuggestion]) -> list[ItemSuggestion]:  
             for i, item in enumerate(reporter_items):
                 if item.rank < 0:
                     continue

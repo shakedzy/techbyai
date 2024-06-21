@@ -6,7 +6,6 @@ import requests
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
-from typing import Any, Callable
 from .color_logger import get_logger
 from .settings import Settings
 from .utils import read_pdf, domain_of_url
@@ -243,29 +242,3 @@ WEB_TOOLS = [web_search, get_url_id_content]
 TWITTER_TOOLS = [search_for_tweets]
 ARXIV_TOOLS = [new_ai_research_from_arxiv, get_url_id_content]
 MAGAZINE_TOOLS = [query_magazine_archive]
-
-
-def build_tools(functions: list[Callable]) -> list[dict[str, Any]]:
-        tools = list()
-        for func in set(functions):
-            v = TOOLS_PARAMS_DEFINITIONS.get(func, [])
-            params = {}
-            required = []
-            for p in v:
-                params[p[0]] = p[1]
-                if p[2]: 
-                    required.append(p[0])
-
-            tools.append({
-                "type": "function",
-                "function": {
-                    "name": func.__name__,
-                    "description": func.__doc__,
-                    "parameters": {
-                        "type": "object",
-                        "properties": params
-                    },
-                    "required": required
-                }
-            })
-        return tools
