@@ -1,8 +1,10 @@
 from .color_logger import get_logger
+from .decorators import atomic
 
 
 class ViewedURLs:
     _instance = None
+    _atomic_locks: dict[str, bool] = {}
     _memory: list[str] = []
     logger = get_logger()
 
@@ -22,6 +24,7 @@ class ViewedURLs:
     def clear(self) -> None:
         self._memory = []
 
+    @atomic
     def add(self, url: str) -> int:
         if url in self._memory:
             index = self.index(url)

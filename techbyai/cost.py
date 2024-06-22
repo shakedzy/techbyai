@@ -1,9 +1,11 @@
 from .settings import Settings
 from .exceptions import CostException
+from .decorators import atomic
 
 
 class Cost:
     _instance = None
+    _atomic_locks: dict[str, bool] = {}
     _prices: dict[str, tuple[float, float]] = Settings().costs
     _uses: dict[str, int] = {k: 0 for k in _prices.keys()}
     _max_cost: float = Settings().editorial.max_cost
@@ -18,6 +20,7 @@ class Cost:
         total = sum([v['cost'] for _,v in report.items()])
         return round(total, precision)
 
+    @atomic
     def add(self, section: str, amount: int = 1) -> None:
         if section not in self._uses.keys():
             raise ValueError(f"No pricing defined for {section}!")
