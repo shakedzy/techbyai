@@ -8,6 +8,7 @@ import dateutil.parser as parser
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
+from typing import Any
 from .color_logger import get_logger
 from .settings import Settings
 from .utils import read_pdf, domain_of_url
@@ -17,6 +18,9 @@ from .cost import Cost
 from .exceptions import WebSearchNoResultsException
 from .package_types import ToolsDefType
 from .decorators import tool
+
+
+REQUIRED_PARAM = 'REQUIRED_PARAM'
 
 
 def _validate_published_date(google_search_result: dict[str, Any]) -> bool | None:
@@ -238,15 +242,23 @@ def query_magazine_archive(query: str, archive: Archive) -> str:
 
 #######
 
-            
-TOOLS_PARAMS_DEFINITIONS: ToolsDefType = {
-    web_search: [("query", {"type": "string", "description": "The query to search on the web"}, True)],
-    get_url_id_content: [("url_id", {"type": "number", "description": "The ID provided of the URL to visit"}, True)],
-    search_for_tweets: [("usernames", {"type": "array", "items": {"type": "string"}, "description": "A list of Twitter usernames to limit the search to"}, True),
-                        ("query", {"type": "string", "description": "The query to search in tweets"}, False)],
-    new_ai_research_from_arxiv: [],
-    query_magazine_archive: [("query", {"type": "string", "description": "The query to search in the archive magazine"}, True)]
-}
+def tools_params_definitions() -> ToolsDefType:
+    match Settings().llm.type:
+        case "openai":
+            string, integer, array_of_strings = "string", "number", "array"
+        case "cohere":
+            string, integer, array_of_strings = "str", "int", "list[str]"
+        case _:
+            raise ValueError(f"Unknown type: {Settings().llm.type}")
+        
+    return {
+        web_search: [("query", {"type": string, "description": "The query to search on the web"}, REQUIRED_PARAM)],
+        get_url_id_content: [("url_id", {"type": integer, "description": "The ID provided of the URL to visit"}, REQUIRED_PARAM)],
+        search_for_tweets: [("usernames", {"type": array_of_strings, "items": {"type": "string"}, "description": "A list of Twitter usernames to limit the search to"}, REQUIRED_PARAM),
+                            ("query", {"type": string, "description": "The query to search in tweets"}, '')],
+        new_ai_research_from_arxiv: [],
+        query_magazine_archive: [("query", {"type": string, "description": "The query to search in the archive magazine"}, REQUIRED_PARAM)]
+    }
 
 
 WEB_TOOLS = [web_search, get_url_id_content]

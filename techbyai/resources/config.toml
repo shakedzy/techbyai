@@ -1,4 +1,6 @@
 [llm]
+client = "openai"
+type = "openai"
 model = "gpt-4o"
 temperature = 0.5
 

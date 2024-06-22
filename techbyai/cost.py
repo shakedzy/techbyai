@@ -1,6 +1,7 @@
 from .settings import Settings
 from .exceptions import CostException
 from .decorators import atomic
+from .color_logger import get_logger
 
 
 class Cost:
@@ -9,7 +10,8 @@ class Cost:
     _prices: dict[str, tuple[float, float]] = Settings().costs
     _uses: dict[str, int] = {k: 0 for k in _prices.keys()}
     _max_cost: float = Settings().editorial.max_cost
-
+    logger = get_logger()
+    
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(Cost, cls).__new__(cls)
@@ -23,11 +25,12 @@ class Cost:
     @atomic
     def add(self, section: str, amount: int = 1) -> None:
         if section not in self._uses.keys():
-            raise ValueError(f"No pricing defined for {section}!")
-        self._uses[section] += amount
-        cost = self()
-        if cost > self._max_cost:
-            raise CostException(f"Cost exceeded threshold! Current cost: {cost}$ [threshold: {round(self._max_cost, 2)}$]")
+            self.logger.warn(f"No pricing defined for {section}!")
+        else:
+            self._uses[section] += amount
+            cost = self()
+            if cost > self._max_cost:
+                raise CostException(f"Cost exceeded threshold! Current cost: {cost}$ [threshold: {round(self._max_cost, 2)}$]")
 
     def report(self) -> dict[str, dict[str, float]]:
         compute_cost = lambda t,u: u * self._prices[t][0] / self._prices[t][1]

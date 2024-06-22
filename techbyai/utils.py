@@ -7,11 +7,14 @@ from typing import TypeVar
 
 T = TypeVar('T')
 
+
 def path_to_resource(filename: str) -> str:
     return pkg_resources.resource_filename('techbyai', f'resources/{filename}')
 
+
 def domain_of_url(url: str) -> str:
     return urlparse(url).netloc
+
 
 def flatten(lst: list[list[T]]) -> list[T]:
     return [x for xs in lst for x in xs]
@@ -46,3 +49,27 @@ def read_pdf(file_path: str) -> str:
 
 def get_version() -> str:
     return pkg_resources.get_distribution("techbyai").version
+
+
+def dedent(text: str) -> str:
+    def count_leading_whitespaces(line: str) -> tuple[int, str]:
+        stripped = line.lstrip()
+        return len(line) - len(stripped), stripped
+    
+    leading_whitespace_count = -1
+    lines = text.splitlines()
+    output: list[str] = []
+    for line in lines:
+        whitespaces_count, stripped = count_leading_whitespaces(line)
+        if stripped:  # Check if the line is non-empty (i.e., it contains non-whitespace characters)
+            if leading_whitespace_count < 0:
+                leading_whitespace_count = whitespaces_count
+                output.append(stripped)
+            else:
+                if whitespaces_count <= leading_whitespace_count:
+                    output.append(stripped)
+                else:
+                    output.append(line[leading_whitespace_count:])
+        else:
+            output.append("")
+    return "\n".join(output)

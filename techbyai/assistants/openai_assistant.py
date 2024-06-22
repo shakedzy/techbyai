@@ -1,13 +1,11 @@
 import json
-
 from openai import OpenAI, BadRequestError
 from openai.types.chat import ChatCompletion, ChatCompletionMessage, ChatCompletionMessageToolCall
 from openai._types import NOT_GIVEN
-from pydantic import BaseModel, RootModel, ValidationError
-from typing import Any, Callable, Type
-from .base_assistant import BaseAssistant, AssistantResponse
+from typing import Any, Callable
+from .base_assistant import BaseAssistant
 from ..settings import Settings
-from ..tools import TOOLS_PARAMS_DEFINITIONS
+from ..tools import tools_params_definitions, REQUIRED_PARAM
 from ..archive import Archive
 
 
@@ -19,13 +17,14 @@ class OpenAIAssistant(BaseAssistant):
 
     def _build_tools(self, functions: list[Callable]) -> list[dict[str, Any]]:
         tools = list()
+        tools_params = tools_params_definitions()
         for func in set(functions):
-            v = TOOLS_PARAMS_DEFINITIONS.get(func, [])
+            v = tools_params.get(func, [])
             params = {}
             required = []
             for p in v:
                 params[p[0]] = p[1]
-                if p[2]: 
+                if p[2] == REQUIRED_PARAM: 
                     required.append(p[0])
 
             tools.append({
@@ -43,7 +42,7 @@ class OpenAIAssistant(BaseAssistant):
         return tools
 
     def _compute_cost(self, completion: ChatCompletion) -> None:
-        input_tokens: int = completion.usage.prompt_tokens      # type: ignore
+        input_tokens: int = completion.usage.prompt_tokens       # type: ignore
         output_tokens: int = completion.usage.completion_tokens  # type: ignore
         self.cost.add('input_tokens', input_tokens)
         self.cost.add('output_tokens', output_tokens)
@@ -66,7 +65,7 @@ class OpenAIAssistant(BaseAssistant):
             tool_result = self.callables[tool_name](**arguments)
             return {
                 "tool_call_id": tool_call.id,
-                "role": "tool",
+                "role": self.tool_role,
                 "name": tool_name,
                 "content": tool_result
             }

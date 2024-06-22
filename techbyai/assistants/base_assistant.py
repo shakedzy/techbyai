@@ -8,6 +8,7 @@ from typing import Any, Callable, Type, final
 from ..archive import Archive
 from ..color_logger import get_logger
 from ..cost import Cost
+from ..settings import Settings
 
 
 @dataclass
@@ -25,6 +26,30 @@ class BaseAssistant:
         self.logger = get_logger()
         self.cost = Cost()
         self.archive = archive
+
+    @property
+    def user_role(self) -> str:
+        match Settings().llm.type:
+            case 'openai':
+                return 'user'
+            case _:
+                raise ValueError('Unknown LLM type')
+            
+    @property
+    def assistant_role(self) -> str:
+        match Settings().llm.type:
+            case 'openai':
+                return 'assistant'
+            case _:
+                raise ValueError('Unknown LLM type')
+            
+    @property
+    def system_role(self) -> str:
+        return 'system'
+        
+    @property
+    def tool_role(self) -> str:
+        return 'tool'
 
     @final
     def get_system_prompt(self) -> str:
@@ -57,12 +82,12 @@ class BaseAssistant:
         else:
             json_error_message = {}
         messages.append({
-            "role": "assistant",
+            "role": self.assistant_role,
             "content": error_message
         })
         return AssistantResponse(content=error_message, json=json_error_message, conversation=messages)
     
-    def _get_completion_message(self, **kwargs) -> dict[str, Any]:
+    def _get_completion_message(self, as_json: bool, messages: list[dict[str, str]], additional_temperature: float) -> dict[str, Any]:
         raise NotImplementedError()
     
     def _run_tool_call(self, tool_call, **kwargs) -> dict[str, str]:
@@ -72,9 +97,9 @@ class BaseAssistant:
     def do(self, task: str, *, json_schema: Type[BaseModel] | None = None, conversation: list = []) -> AssistantResponse:
         system_prompt = self.get_system_prompt()
         messages = [
-            {"role": "system", "content": system_prompt}
+            {"role": self.system_role, "content": system_prompt}
             ] + conversation + [
-            {"role": "user", "content": task}
+            {"role": self.user_role, "content": task}
         ]
 
         final_message = False
@@ -110,13 +135,13 @@ class BaseAssistant:
                 except ValidationError as e:
                     self.logger.warn(f"Got JSON message with incorrect schema:\n{e.json(indent=2)}", color='red')
                     messages.append({
-                        "role": "user",
+                        "role": self.user_role,
                         "content": "This JSON message is not formatted as requested! Return a JSON according to the format you were given"
                     })
                 except Exception as e:
                     self.logger.warn(f"Error decoding message as JSON - {e.__class__.__name__}: {e}", color='red')
                     messages.append({
-                        "role": "user",
+                        "role": self.user_role,
                         "content": "The message is not formatted as a valid JSON! Return it as a valid JSON according to the format you were given"
                     })
             else:

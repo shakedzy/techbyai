@@ -5,13 +5,12 @@ import pandas as pd
 from time import time
 from datetime import datetime, timedelta
 from random import randint, shuffle
-from textwrap import dedent
 from concurrent.futures import ThreadPoolExecutor
 from openai import OpenAI
 from .assistants import OpenAIAssistant
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
-from .utils import flatten, domain_of_url, get_version
+from .utils import flatten, domain_of_url, get_version, dedent
 from .settings import Settings
 from .cost import Cost
 from .audio import Narrator
