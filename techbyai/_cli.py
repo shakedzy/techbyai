@@ -13,5 +13,10 @@ def run():
     
     set_default_log_level(args.log.upper())
     Settings().archive = args.archive
-    Routine().do()
-    get_logger().info(f"Costs breakdown: {Cost().report()}", color='magenta')
+    logger = get_logger()
+    routine = Routine()
+    try:
+        routine.do()
+    finally:
+        logger.info(f"Viewed URLs:\n{routine.viewed_urls.get_all()}")
+        logger.info(f"Costs breakdown: {Cost().report()}", color='magenta')
