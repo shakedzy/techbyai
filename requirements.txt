@@ -8,5 +8,6 @@ pandas~=2.2.2
 pydantic~=2.7.2
 pydub~=0.25.1
 pypdf~=4.1.0
+pytz~=2024.1
 requests~=2.31.0
 setuptools

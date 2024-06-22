@@ -1,8 +1,10 @@
 import re
 import os
 import json
+import pytz
 import arxiv
 import requests
+import dateutil.parser as parser
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
@@ -22,7 +24,7 @@ def _validate_published_date(google_search_result: dict[str, Any]) -> bool:
     published_date: str | None = google_search_result.get('pagemap', {}).get('metatags', [{}])[0].get('article:published_time', None)
     if not published_date: 
         return False
-    dt = datetime.strptime(published_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+    dt = parser.parse(published_date).astimezone(pytz.utc)
     date_cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=Settings().search.past_days)
     return dt >= date_cutoff
 
