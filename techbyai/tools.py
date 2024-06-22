@@ -18,9 +18,6 @@ from .package_types import ToolsDefType
 from .decorators import tool
 
 
-NO_RESULTS = 'No results'
-
-
 def _validate_published_date(google_search_result: dict[str, Any]) -> bool:
     published_date: str | None = google_search_result.get('pagemap', {}).get('metatags', [{}])[0].get('article:published_time', None)
     if not published_date: 
@@ -156,8 +153,7 @@ def web_search(query: str, *, ignore_twitter: bool = True, force_published_date:
             raise WebSearchNoResultsException()
     
     except WebSearchNoResultsException:
-        url_id = viewed_urls.add(NO_RESULTS)
-        return json.dumps(f"{{'empty': {NO_RESULTS}, 'id': {url_id} }}")
+        return '{}'
 
 
 @tool
@@ -200,8 +196,7 @@ def new_ai_research_from_arxiv() -> str:
     if results:
         return json.dumps(results)
     else:
-        url_id = viewed_urls.add(NO_RESULTS)
-        return json.dumps(f"{{'empty': {NO_RESULTS}, 'id': {url_id} }}")
+        return '{}'
 
 
 @tool
