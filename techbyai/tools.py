@@ -1,8 +1,10 @@
 import re
 import os
 import json
+import pytz
 import arxiv
 import requests
+import dateutil.parser as parser
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
@@ -17,7 +19,15 @@ from .package_types import ToolsDefType
 from .decorators import tool
 
 
-NO_RESULTS = 'No results'
+def _validate_published_date(google_search_result: dict[str, Any]) -> bool | None:
+    published_date: str | None = google_search_result.get('pagemap', {}).get('metatags', [{}])[0].get('article:published_time', None)
+    if not published_date: 
+        return None
+    dt = parser.parse(published_date).astimezone(pytz.utc)
+    date_cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=Settings().search.past_days)
+    date_cutoff = pytz.utc.localize(date_cutoff)
+    return dt >= date_cutoff
+
 
 def _validate_url(url: str, *, retrieve_title: bool = False) -> bool | str:
     try:
@@ -125,9 +135,12 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
             raise WebSearchNoResultsException()
         
         for result in response['items']:
+            is_date_valid = _validate_published_date(result)
+            if is_date_valid == False:  # Doesn't apply when there is no published date (None is returned)
+                continue  
             url = result['link']
-            title: str = result['title'] or ''
-            incomplete_title: bool = title.strip().endswith('…')
+            title: str = (result['title'] or '').strip()
+            incomplete_title: bool = title.endswith('…') or title.endswith('...')
             is_valid = _validate_url(url, retrieve_title=incomplete_title)
             if is_valid:
                 if incomplete_title:
@@ -141,8 +154,7 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
             raise WebSearchNoResultsException()
     
     except WebSearchNoResultsException:
-        url_id = viewed_urls.add(NO_RESULTS)
-        return json.dumps(f"{{'empty': {NO_RESULTS}, 'id': {url_id} }}")
+        return '{}'
 
 
 @tool
@@ -185,8 +197,7 @@ def new_ai_research_from_arxiv() -> str:
     if results:
         return json.dumps(results)
     else:
-        url_id = viewed_urls.add(NO_RESULTS)
-        return json.dumps(f"{{'empty': {NO_RESULTS}, 'id': {url_id} }}")
+        return '{}'
 
 
 @tool

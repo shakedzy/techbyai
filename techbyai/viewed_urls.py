@@ -1,9 +1,12 @@
 from .color_logger import get_logger
+from .decorators import atomic
 
 
 class ViewedURLs:
     _instance = None
+    _atomic_locks: dict[str, bool] = {}
     _memory: list[str] = []
+    logger = get_logger()
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -12,7 +15,7 @@ class ViewedURLs:
 
     def __getitem__(self, i: int) -> str:
         url = self._memory[i]
-        get_logger().debug(f'Retrieving URL {i}: {url}')
+        self.logger.debug(f'Retrieving URL {i}: {url}')
         return url
     
     def __len__(self) -> int:
@@ -21,12 +24,16 @@ class ViewedURLs:
     def clear(self) -> None:
         self._memory = []
 
+    @atomic
     def add(self, url: str) -> int:
         if url in self._memory:
-            return self.index(url)
+            index = self.index(url)
+            self.logger.debug(f'Adding URL: {url} [already in memory, index: {index}]')
         else:
+            index = len(self) - 1
             self._memory.append(url)
-            return len(self) - 1
+            self.logger.debug(f'Adding URL: {url} [index: {index}]')
+        return index
     
     def index(self, url: str) -> int:
         return self._memory.index(url)
@@ -36,3 +43,6 @@ class ViewedURLs:
     
     def remove(self, url: str) -> None:
         return self._memory.remove(url)
+    
+    def get_all(self) -> dict[int, str]:
+        return {index: url for index, url in enumerate(self._memory)}
