@@ -26,6 +26,7 @@ def _validate_published_date(google_search_result: dict[str, Any]) -> bool:
         return False
     dt = parser.parse(published_date).astimezone(pytz.utc)
     date_cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=Settings().search.past_days)
+    date_cutoff = pytz.utc.localize(date_cutoff)
     return dt >= date_cutoff
 
 
