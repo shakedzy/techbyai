@@ -22,7 +22,6 @@ from .decorators import tool
 
 def _validate_published_date(google_search_result: dict[str, Any]) -> bool | None:
     published_date: str | None = google_search_result.get('pagemap', {}).get('metatags', [{}])[0].get('article:published_time', None)
-    get_logger().debug(f'Published date of {google_search_result["link"]}: {published_date}')
     if not published_date: 
         return None
     dt = parser.parse(published_date).astimezone(pytz.utc)
