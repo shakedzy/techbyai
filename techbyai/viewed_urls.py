@@ -40,3 +40,6 @@ class ViewedURLs:
     
     def remove(self, url: str) -> None:
         return self._memory.remove(url)
+    
+    def get_all(self) -> dict[int, str]:
+        return {index: url for index, url in enumerate(self._memory)}
