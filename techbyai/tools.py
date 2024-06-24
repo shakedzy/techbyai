@@ -107,7 +107,7 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
 
     [{
         "title": "Welcome to My Site",
-        "id": 12,
+        "id": 121,
         "domain": "site.com",
         "description": "This is my private website, see my stuff here"
     }]
@@ -207,7 +207,11 @@ def get_url_id_content(url_id: int) -> str:
     Retrieves the content of the provided URL ID, which could be either a web page or an arXiv paper.
     Returns the full plain text, formatting and images are excluded.
     """
-    url = viewed_urls[url_id]
+    try:
+        url = viewed_urls[url_id]
+    except:
+        get_logger().warn(f"Tried to fetch URL ID {url_id}, but it does not exist!", color='red')
+        return f"ERROR: URL ID {url_id} does not exist!"
     domain = domain_of_url(url)
     if 'arxiv' in domain:
         paper_id = url.split('/')[-1].strip()
