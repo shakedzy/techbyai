@@ -15,7 +15,6 @@ class ViewedURLs:
 
     def __getitem__(self, i: int) -> str:
         url = self._memory[i]
-        self.logger.debug(f'Retrieving URL {i}: {url}')
         return url
     
     def __len__(self) -> int:
