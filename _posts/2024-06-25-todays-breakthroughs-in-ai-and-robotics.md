@@ -76,9 +76,6 @@ GXO, a leading logistics firm, is collaborating with Apptronik to test Apollo, a
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px;">
 <div class="loading" style="width: 100%; border-left: 0px;"><a href="https://twitter.com/ylecun/status/1805278808867533104">Loading: twitter.com/ylecun/status/1805278808867533104</a></div>
 </blockquote>
-<blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px;">
-<div class="loading" style="width: 100%; border-left: 0px;"><a href="https://www.simplilearn.com/pgp-project-management-certification-training-course-in-las-vegas-city">Loading: www.simplilearn.com/pgp-project-management-certification-training-course-in-las-vegas-city</a></div>
-</blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 **Other headlines:**
