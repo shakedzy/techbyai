@@ -65,9 +65,6 @@ _Summarized by: Liam O'Connor_ [[www.iotworldtoday.com](https://www.iotworldtoda
 
 GXO, a leading logistics firm, is collaborating with Apptronik to test Apollo, an AI-powered humanoid robot, for warehouse automation. The initiative aims to enhance operational efficiency by automating item picking and reducing repetitive tasks. Apollo robots, designed to mimic human muscle movements, stand 5 feet 8 inches tall and can carry up to 55 pounds. They navigate around human coworkers and are powered by specially configured batteries for optimal performance. This partnership seeks to refine the AI model driving Apollo before full deployment in GXO's U.S. distribution centers, ultimately aiming to improve safety and allow human workers to focus on higher-value tasks.
 
-<h3><strong>💡 More articles for you:</strong></h3>
-
-* [StableNormal: Reducing Diffusion Variance for Stable and Sharp Normal](https://twitter.com/adcock_brett/status/1805300303069429909) (twitter.com)
 
 ## Trending on Twitter
 <blockquote class="twitter-tweet" data-media-max-width="560" data-dnt="true" style="background-color: white; border-left: 0px; padding: 0px;">
