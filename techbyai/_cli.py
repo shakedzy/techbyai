@@ -19,4 +19,4 @@ def run():
         routine.do()
     finally:
         logger.info(f"Viewed URLs:\n{routine.viewed_urls.get_all()}")
-        logger.info(f"Costs breakdown: {Cost().report()}", color='magenta')
+        logger.info(f"Costs breakdown (total: {routine.cost()}$): {routine.cost.report()}", color='magenta')
