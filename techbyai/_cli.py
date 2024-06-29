@@ -2,7 +2,6 @@ from argparse import ArgumentParser
 from .color_logger import set_default_log_level, get_logger
 from .settings import Settings
 from .routine import Routine
-from .cost import Cost
 
 
 def run():
