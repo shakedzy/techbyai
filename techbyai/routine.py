@@ -216,7 +216,11 @@ class Routine:
         for i, reporter_suggestions_dict in enumerate([r.json for r in results]):
             reporter_suggestions: list[ItemSuggestion] = []
             for title, url_id in reporter_suggestions_dict.items():
-                url = self.viewed_urls[url_id]
+                try:
+                    url = self.viewed_urls[url_id]
+                except Exception as e:
+                    self.logger.warning(f"{e.__class__.__name__}: Tried to retrieve URL ID {url_id}, but it does not exist!", color='red')
+                    continue
                 reporter_suggestions.append(ItemSuggestion(id=url_id, title=title, url=url, reporter=self.reporters[i].name or ''))
             suggestions.append(reporter_suggestions)
         return suggestions
