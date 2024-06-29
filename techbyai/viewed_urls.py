@@ -6,6 +6,7 @@ class ViewedURLs:
     _instance = None
     _atomic_locks: dict[str, bool] = {}
     _memory: list[str] = []
+    _titles: dict[str, str] = {}
     logger = get_logger()
 
     def __new__(cls, *args, **kwargs):
@@ -24,15 +25,19 @@ class ViewedURLs:
         self._memory = []
 
     @atomic
-    def add(self, url: str) -> int:
+    def add(self, url: str, *, title: str) -> int:
         if url in self._memory:
             index = self.index(url)
             self.logger.debug(f'Adding URL: {url} [already in memory, index: {index}]')
         else:
             index = len(self) - 1
             self._memory.append(url)
+            self._titles[url] = title
             self.logger.debug(f'Adding URL: {url} [index: {index}]')
         return index
+    
+    def get_title(self, url: str) -> str:
+        return self._titles[url]
     
     def index(self, url: str) -> int:
         return self._memory.index(url)
