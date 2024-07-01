@@ -113,7 +113,9 @@ class BaseAssistant:
             elif json_schema:
                 try:
                     content: str = assistant_message['content'] or ''
+                    content = content.strip(' \n\t"\'')
                     loaded_json: dict = json.loads(content)
+                    print(f'LOADED JSON {type(loaded_json)} -- {loaded_json} -- {content} [{type(content)}]')
                     pydantic_json_model = json_schema(root=loaded_json) if issubclass(json_schema, RootModel) else json_schema(**loaded_json)
                     content_json = pydantic_json_model.model_dump(mode='json')
                     final_message = True
@@ -124,7 +126,7 @@ class BaseAssistant:
                         "content": "This JSON message is not formatted as requested! Return a JSON according to the format you were given"
                     })
                 except Exception as e:
-                    self.logger.warn(f"Error decoding message as JSON - {e.__class__.__name__}: {e}", color='red')
+                    self.logger.warn(f"Error decoding message as JSON - {e.__class__.__name__}: {e} | CONTENT: {content}", color='red')
                     messages.append({
                         "role": self.user_role,
                         "content": "The message is not formatted as a valid JSON! Return it as a valid JSON according to the format you were given"

@@ -111,7 +111,9 @@ class OllamaAssistant(BaseAssistant):
                     stream=False,
                     format='json' if as_json or self.tools else '',
                     options={
-                        'temperature': temperature
+                        'temperature': temperature,
+                        'mirostat': 2,
+                        'mirostat_tau': 1
                     }
                 )
                 content: str = response['message']["content"]  # type: ignore
@@ -160,7 +162,7 @@ class OllamaAssistant(BaseAssistant):
                 print(f'XXX - {directly_respond_tool}')
                 message = {
                     "role": self.assistant_role, 
-                    "content": directly_respond_tool['parameters'][DIRECTLY_ANSWER_TOOL_RESPONSE]
+                    "content": json.dumps(directly_respond_tool['parameters'][DIRECTLY_ANSWER_TOOL_RESPONSE])
                 }
         else:
             message = {
