@@ -61,8 +61,8 @@ twitter_accounts = {"AravSrinivas" = "Aravind Srinivas", "adcock_brett" = "Brett
 
 
 # COSTS (in US Dollars)
+# OpenAI costs info: https://openai.com/pricing#language-models
 [costs.openai-gpt-4o]  
-# Costs info: https://openai.com/pricing#language-models
 input_tokens = [5, 1e6]
 output_tokens = [15, 1e6]
 embedding_tokens = [0.02, 1e6]

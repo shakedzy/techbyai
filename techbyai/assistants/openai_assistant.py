@@ -13,7 +13,7 @@ from ..constants import TOOL_CALLS
 
 class OpenAIAssistant(BaseAssistant):
     def __init__(self, definition: str, client: OpenAI, *, tools: list[Callable] = [], name: str | None = None, archive: Archive | None = None) -> None:
-        super().__init__(definition, name=name, archive=archive)
+        super().__init__(definition, name=name, tools=tools, archive=archive)
         self.client = client
         self.tools = self._build_tools(tools) if tools else NOT_GIVEN
 

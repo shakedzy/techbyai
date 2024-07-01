@@ -167,18 +167,16 @@ class OllamaSingleToolCall(BaseModel):
     @model_validator(mode='after')
     def check_directly_answer_tools(self):
         if self.tool == DIRECTLY_ANSWER_TOOL and not DIRECTLY_ANSWER_TOOL_RESPONSE in self.parameters:
-            raise ValueError(f'Missing `{DIRECTLY_ANSWER_TOOL_RESPONSE}` parameter in {self.tool}')
+            raise ValueError(f'Missing `{DIRECTLY_ANSWER_TOOL_RESPONSE}` parameter in {self.tool} (Parameters: {self.parameters})')
         return self
 
 
 class OllamaToolsCall(BaseModel):
-    tools: list[OllamaSingleToolCall]
+    tools: list[dict[str, Any]] | list[OllamaSingleToolCall]
 
     @field_validator('tools', mode='before')
     def check_tools_is_list(cls, value, info):
         if not isinstance(value, list):
-            raise ValueError('Must be a list of tools')
-        
-        if not all(isinstance(tool, OllamaSingleToolCall) for tool in value):
-            raise ValueError('Must be a list of tools')
+            raise ValueError('Must be a list of tools')    
+        value = [OllamaSingleToolCall(**tool) for tool in value]
         return value

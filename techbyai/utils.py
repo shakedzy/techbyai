@@ -73,3 +73,7 @@ def dedent(text: str) -> str:
         else:
             output.append("")
     return "\n".join(output)
+
+
+def lowercase_keys(d: dict[str, T]) -> dict[str, T]:
+    return {k.lower(): (lowercase_keys(v) if isinstance(v, dict) else v) for k, v in d.items()}

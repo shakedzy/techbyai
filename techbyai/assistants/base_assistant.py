@@ -18,7 +18,7 @@ class AssistantResponse:
 
 
 class BaseAssistant:
-    def __init__(self, definition: str, *, tools: list[Callable] = [], name: str | None = None, archive: Archive | None = None) -> None:
+    def __init__(self, definition: str, *, tools: list[Callable], name: str | None, archive: Archive | None) -> None:
         self.definition = definition
         self.name = name
         self.callables = {f.__name__: f for f in tools}
@@ -66,6 +66,7 @@ class BaseAssistant:
     
     def _get_assistant_error_message(self, e: Exception, *, as_json: bool, messages: list[dict[str, str]]) -> AssistantResponse:
         error_message = f'ERROR - {e.__class__.__name__}: {e}'
+        raise e  # TODO: REMOVE THIS LINE
         if as_json:
             json_error_message = {"error": error_message}
             error_message = json.dumps(json_error_message)

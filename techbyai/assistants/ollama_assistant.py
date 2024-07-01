@@ -7,7 +7,7 @@ from .base_assistant import BaseAssistant
 from ..settings import Settings
 from ..tools import tools_params_definitions, REQUIRED_PARAM
 from ..archive import Archive
-from ..utils import dedent
+from ..utils import dedent, lowercase_keys
 from ..schemas import OllamaToolsCall
 from ..constants import DIRECTLY_ANSWER_TOOL, DIRECTLY_ANSWER_TOOL_RESPONSE, TOOL_CALLS
 
@@ -16,7 +16,7 @@ class OllamaAssistant(BaseAssistant):
     # Designed to be used with Cohere's Command-R and Command-R+ models
 
     def __init__(self, definition: str, client: SSHClient | None, *, tools: list[Callable] = [], name: str | None = None, archive: Archive | None = None) -> None:
-        super().__init__(definition, name=name, archive=archive)
+        super().__init__(definition, name=name, tools=tools, archive=archive)
         self.client = client
         self.tools = self._build_tools(tools) if tools else None
 
@@ -102,11 +102,12 @@ class OllamaAssistant(BaseAssistant):
 
     def _get_completion_from_ollama_client(self, messages: list[dict[str, Any]], *, as_json: bool, additional_temperature: float, retires: int = 3) -> str:
         temperature: float = Settings().llm.temperature + additional_temperature
+        ollama_messages = [{"role": m["role"], "content": str(m["content"])} for m in messages]
         for _ in range(retires):
             if self.client is None:
                 response = ollama.chat(
                     model=Settings().llm.model,
-                    messages=messages,  # type: ignore
+                    messages=ollama_messages,  # type: ignore
                     stream=False,
                     format='json' if as_json or self.tools else '',
                     options={
@@ -116,7 +117,7 @@ class OllamaAssistant(BaseAssistant):
                 content: str = response['message']["content"]  # type: ignore
                 
             else:
-                curl_command = f'curl -X POST http://localhost:{Settings().remote_port}/api/chat -d \'{{"model": "{Settings().llm.model}", "messages": {json.dumps(messages)}, "options": {{ "temperature": {temperature} }}, "stream": false }}\''
+                curl_command = f'curl -X POST http://localhost:{Settings().remote_port}/api/chat -d \'{{"model": "{Settings().llm.model}", "messages": {json.dumps(ollama_messages)}, "options": {{ "temperature": {temperature} }}, "stream": false }}\''
                 stdin, stdout, stderr = self.client.exec_command(curl_command)
                 response = stdout.read().decode('UTF-8')
                 content = str(json.loads(response)['message']['content'])
@@ -125,22 +126,30 @@ class OllamaAssistant(BaseAssistant):
                 return content
             else:
                 try:
-                    tools_call = json.loads(content)['tools']
-                    __ = OllamaToolsCall(tools=tools_call)
-                    return content
+                    json_content = lowercase_keys(json.loads(content))
+                    json_content['tools'] = [lowercase_keys(t) for t in json_content['tools']]
+                    tool_calls: list[dict[str, Any]] = json_content['tools']
+                    __ = OllamaToolsCall(tools=tool_calls)
+                    return json.dumps(json_content)
                 
+                except KeyError:
+                    self.logger.debug(f"Didn't get `tools` key, assuming {DIRECTLY_ANSWER_TOOL} tool")
+                    return json.dumps({"tools": [{"tool": DIRECTLY_ANSWER_TOOL, "parameters": {DIRECTLY_ANSWER_TOOL_RESPONSE: content}}]})
+
                 except Exception as e:
                     error_msg = f"{e.__class__.__name__}: Error while parsing tools call, JSON is malformed or built with incorrect schema. Use the EXACT JSON schema you were provided!"
-                    self.logger.warn(f"{error_msg}\nMessage: {content}", color='red')
+                    self.logger.warn(f"{error_msg}\n >> Message: {content}\n >> Full error message: {e}", color='red')
                     messages.append({"role": self.user_role, "content": error_msg})
+                    additional_temperature += .3
         
         raise RuntimeError(f"{retires} times the Ollama client failed to provide a valid tools call. Please check the logs for more information.")
     
     def _get_completion_message(self, as_json: bool, messages: list[dict[str, Any]], additional_temperature: float) -> dict[str, Any]:
         content = self._get_completion_from_ollama_client(messages, as_json=as_json, additional_temperature=additional_temperature)
+        print(f'CONTENT -- {content}')
         if self.tools:
             tool_calls: list[dict[str, Any]] = json.loads(content)['tools']
-            if not DIRECTLY_ANSWER_TOOL in tool_calls:
+            if not DIRECTLY_ANSWER_TOOL in [t['tool'] for t in tool_calls]:
                 message = {
                     "role": self.assistant_role,
                     "content": content,
@@ -148,9 +157,10 @@ class OllamaAssistant(BaseAssistant):
                 }
             else:
                 directly_respond_tool = [t for t in tool_calls if t['tool'] == DIRECTLY_ANSWER_TOOL][0]
+                print(f'XXX - {directly_respond_tool}')
                 message = {
                     "role": self.assistant_role, 
-                    "content": directly_respond_tool[DIRECTLY_ANSWER_TOOL_RESPONSE]
+                    "content": directly_respond_tool['parameters'][DIRECTLY_ANSWER_TOOL_RESPONSE]
                 }
         else:
             message = {
@@ -160,9 +170,9 @@ class OllamaAssistant(BaseAssistant):
         return message
 
     def _run_tool_call(self, tool_call: dict[str, Any], index: int) -> str | None:
-        tool_name = tool_call['tool']
+        tool_name = tool_call['tool'].replace('`','').strip()
         if tool_name in self.callables:
-            arguments = json.loads(tool_call["parameters"])
+            arguments: dict[str, Any] = tool_call["parameters"]
             if tool_name == 'query_magazine_archive':
                 arguments['archive'] = self.archive
             self.logger.info(f"Running tool {tool_name}: {str(arguments)}", color='yellow')
@@ -184,5 +194,5 @@ class OllamaAssistant(BaseAssistant):
             if result:
                 tools_message = f"{tools_message}\n{result}"
         if tools_message:
-            messages.append({"role": "user", "content": tools_message})
+            messages.append({"role": "user", "content": tools_message.strip()})
         return messages, bool(tools_message)
