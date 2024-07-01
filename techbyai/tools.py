@@ -110,7 +110,7 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
 
     [{
         "title": "Welcome to My Site",
-        "id": 12,
+        "id": 921,
         "domain": "site.com",
         "description": "This is my private website, see my stuff here"
     }]
@@ -149,7 +149,7 @@ def web_search(query: str, *, ignore_twitter: bool = True) -> str:
             if is_valid:
                 if incomplete_title:
                     title: str = is_valid  # type: ignore
-                url_id = viewed_urls.add(url)
+                url_id = viewed_urls.add(url, title=title)
                 results.append({"title": title, "id": url_id, "domain": domain_of_url(url), "description": result['snippet']})
 
         if results:
@@ -179,7 +179,7 @@ def new_ai_research_from_arxiv() -> str:
 
     [{
         "title": "Realizing limit cycles in dissipative bosonic systems",
-        "id": 101,
+        "id": 801,
         "summary": "We propose a general mechanism for generating limit cycle (LC) oscillations..."
     }]
     """
@@ -194,7 +194,7 @@ def new_ai_research_from_arxiv() -> str:
     for r in arxiv_results:
         if r.published.date() < now - timedelta(days=Settings().search.past_days):
             break
-        url_id = viewed_urls.add(r.pdf_url)
+        url_id = viewed_urls.add(r.pdf_url, title=r.title)
         results.append({f"title": r.title, "id": url_id, "summary": r.summary})
     
     get_logger().info(f"Found {len(results)} new papers on arXiv")
@@ -210,7 +210,11 @@ def get_url_id_content(url_id: int) -> str:
     Retrieves the content of the provided URL ID, which could be either a web page or an arXiv paper.
     Returns the full plain text, formatting and images are excluded.
     """
-    url = viewed_urls[url_id]
+    try:
+        url = viewed_urls[url_id]
+    except:
+        get_logger().warn(f"Tried to fetch URL ID {url_id}, but it does not exist!", color='red')
+        return f"ERROR: URL ID {url_id} does not exist!"
     domain = domain_of_url(url)
     if 'arxiv' in domain:
         paper_id = url.split('/')[-1].strip()

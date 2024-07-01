@@ -18,7 +18,7 @@ from .audio import Narrator
 from .archive import Archive, Embedder
 from .viewed_urls import ViewedURLs
 from .tools import WEB_TOOLS, ARXIV_TOOLS, TWITTER_TOOLS, MAGAZINE_TOOLS
-from .schemas import StringStringJSONWithCustomKeys, StringIntJSONWithCustomKeys, TweetsAndTrends, SelectedItems, RemovableItems, TitleAndSubtitle
+from .schemas import StringStringJSONWithCustomKeys, ChosenItems, TweetsAndTrends, SelectedItems, RemovableItems, TitleAndSubtitle
 from .assistants import BaseAssistant, OpenAIAssistant, OllamaAssistant
 
 
@@ -208,11 +208,10 @@ class Routine:
               Posts about existing services and best practices are not welcome.
             - The readers of the magazine are professionals, AVOID articles about broad reviews of topics and trends, focus and actual novelties, breakthroughs and updates
             - Make sure the URL ID you provide direct to the exact article you chose (and not to a some news aggregation). Search for the specific URL ID of the article if needed
-            - Your response should be formatted as JSON, where the items titles (meaning: the titles of the 
-              articles you read) are the keys, and the values are the items IDs.
+            - Your response should be formatted as the following JSON, where the value is a list of the chosen items IDs:
             Example:
             ```json
-            {{"OpenAI's Sora text-to-video generator will be publicly available later this year": 367}}
+            {{"items": [...]}}
             ```
             REMEMBER: You are competing with the rest of the staff on finding the most interesting items, so be
             creative in your searches, don't just copy paste the editor's instructions!
@@ -228,26 +227,31 @@ class Routine:
             in these fields and return a list of up to {Settings().editorial.reporter_items} such papers, which you believe are the
             most novel and groundbreaking from those you read. You are given the freedom of returning no papers at all if you believe there's
             nothing exciting to share with the magazine's professional readers.
-            Return your response as a JSON, where the keys are the papers names and the values are their IDs:
+            Your response should be formatted as the following JSON, where the value is a list of the chosen items IDs:
             ```json
-            {{"Realizing limit cycles in dissipative bosonic systems": 24}}
+            {{"items: [...]}}
             ```
-            Return an empty JSON if there are no results: `{{}}`
+            Return an empty list as the value if there are no results.
             """.strip())
         
         tasks: list[str] = [reporters_task] * len(self.reporters)
         tasks[0] = arxiv_task
 
         with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(reporter.do, task, json_schema=StringIntJSONWithCustomKeys) for reporter, task in zip(self.reporters, tasks)]
+            futures = [executor.submit(reporter.do, task, json_schema=ChosenItems) for reporter, task in zip(self.reporters, tasks)]
         results = [f.result() for f in futures]
         self.logger.debug(f"Reporters suggestions: {[r.content for r in results]}")
 
         suggestions: list[list[ItemSuggestion]] = []
         for i, reporter_suggestions_dict in enumerate([r.json for r in results]):
             reporter_suggestions: list[ItemSuggestion] = []
-            for title, url_id in reporter_suggestions_dict.items():
-                url = self.viewed_urls[url_id]
+            for url_id in reporter_suggestions_dict["items"]:
+                try:
+                    url = self.viewed_urls[url_id]
+                except Exception as e:
+                    self.logger.warning(f"{e.__class__.__name__}: Tried to retrieve URL ID {url_id}, but it does not exist!", color='red')
+                    continue
+                title = self.viewed_urls.get_title(url)
                 reporter_suggestions.append(ItemSuggestion(id=url_id, title=title, url=url, reporter=self.reporters[i].name or ''))
             suggestions.append(reporter_suggestions)
         return suggestions
@@ -557,9 +561,21 @@ class Routine:
             return '\n'.join(s.lstrip() for s in html.split('\n'))
         
         if tweets_urls:
-            htmls = [embedded_tweet_html(self.viewed_urls[url_id]) for url_id in tweets_urls]
-            htmls = ["## Trending on Twitter"] + htmls + ['<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>']
-            return '\n'.join(htmls)
+            htmls = []
+            for url_id in tweets_urls:
+                try:
+                    url = self.viewed_urls[url_id]
+                    if domain_of_url(url) in ['x.com', 'twitter.com']:
+                        htmls.append(embedded_tweet_html(url))
+                    else:
+                        self.logger.warn(f'URL ID {url_id} is not a tweet: {url}')
+                except Exception as e:
+                    self.logger.warn(f'{e.__class__.__name__}: Error while trying to retriev URL ID {url_id}!', color='red')
+            if htmls:
+                htmls = ["## Trending on Twitter"] + htmls + ['<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>']
+                return '\n'.join(htmls)
+            else:
+                return ''
         else:
             return ''
 

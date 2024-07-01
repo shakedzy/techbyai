@@ -17,17 +17,15 @@ class StringStringJSONWithCustomKeys(RootModel[dict[str, str]]):
         return value
 
 
-class StringIntJSONWithCustomKeys(RootModel[dict[str, int]]):
-    @field_validator('root', mode='before')
-    def check_keys_and_values_are_strings(cls, value, info):
-        if not isinstance(value, dict):
-            raise ValueError('Must be a dictionary')
-        
-        for key, val in value.items():
-            if not isinstance(key, str):
-                raise ValueError(f'Key {key} is not a string')
-            if not isinstance(val, int):
-                raise ValueError(f'Value {val} is not an integer')
+class ChosenItems(BaseModel):
+    items: list[int]
+
+    @field_validator('items', mode='before')
+    def check_items_are_integers(cls, value, info):
+        if not isinstance(value, list):
+            raise ValueError('Must be a list of integers')
+        if not all(isinstance(item, int) for item in value):
+            raise ValueError('List must contain only integers')
         return value
 
 
