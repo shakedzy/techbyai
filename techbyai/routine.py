@@ -530,9 +530,21 @@ class Routine:
             return '\n'.join(s.lstrip() for s in html.split('\n'))
         
         if tweets_urls:
-            htmls = [embedded_tweet_html(self.viewed_urls[url_id]) for url_id in tweets_urls]
-            htmls = ["## Trending on Twitter"] + htmls + ['<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>']
-            return '\n'.join(htmls)
+            htmls = []
+            for url_id in tweets_urls:
+                try:
+                    url = self.viewed_urls[url_id]
+                    if domain_of_url(url) in ['x.com', 'twitter.com']:
+                        htmls.append(embedded_tweet_html(url))
+                    else:
+                        self.logger.warn(f'URL ID {url_id} is not a tweet: {url}')
+                except Exception as e:
+                    self.logger.warn(f'{e.__class__.__name__}: Error while trying to retriev URL ID {url_id}!', color='red')
+            if htmls:
+                htmls = ["## Trending on Twitter"] + htmls + ['<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>']
+                return '\n'.join(htmls)
+            else:
+                return ''
         else:
             return ''
 
