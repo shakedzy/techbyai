@@ -1,6 +1,6 @@
 [llm]
 client = "ollama:local"
-model = "gpt-4o"
+model = "command-r"
 temperature = 0.5
 
 [embeddings]
