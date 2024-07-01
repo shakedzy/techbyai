@@ -1,14 +1,13 @@
 import json
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from pydantic import BaseModel, RootModel, ValidationError
-from typing import Any, Callable, Type, final
+from typing import Any, Callable, Type
 from ..archive import Archive
 from ..color_logger import get_logger
 from ..cost import Cost
-from ..settings import Settings
+from ..constants import TOOL_CALLS
 
 
 @dataclass
@@ -29,19 +28,11 @@ class BaseAssistant:
 
     @property
     def user_role(self) -> str:
-        match Settings().llm.type:
-            case 'openai':
-                return 'user'
-            case _:
-                raise ValueError('Unknown LLM type')
+        return 'user'
             
     @property
     def assistant_role(self) -> str:
-        match Settings().llm.type:
-            case 'openai':
-                return 'assistant'
-            case _:
-                raise ValueError('Unknown LLM type')
+        return 'assistant'
             
     @property
     def system_role(self) -> str:
@@ -51,7 +42,6 @@ class BaseAssistant:
     def tool_role(self) -> str:
         return 'tool'
 
-    @final
     def get_system_prompt(self) -> str:
         return f"[Today is {datetime.now().strftime('%d %B, %Y')}{', your name is ' + self.name if self.name else ''}]\n{self.definition}"
 
@@ -87,10 +77,10 @@ class BaseAssistant:
         })
         return AssistantResponse(content=error_message, json=json_error_message, conversation=messages)
     
-    def _get_completion_message(self, as_json: bool, messages: list[dict[str, str]], additional_temperature: float) -> dict[str, Any]:
+    def _get_completion_message(self, as_json: bool, messages: list[dict[str, Any]], additional_temperature: float) -> dict[str, Any]:
         raise NotImplementedError()
     
-    def _run_tool_call(self, tool_call, **kwargs) -> dict[str, str]:
+    def _handle_tools(self, messages: list[dict[str, Any]], tool_calls: list) -> tuple[list[dict[str, Any]], bool]:
         raise NotImplementedError()
     
     @abstractmethod
@@ -112,15 +102,9 @@ class BaseAssistant:
             messages.append(assistant_message)
             additional_temperature = 0.0
 
-            if 'tool_calls' in assistant_message:
-                succeeded_any_tool_call = False
-                with ThreadPoolExecutor() as executor:
-                    futures = [executor.submit(self._run_tool_call, tool_call) for tool_call in assistant_message['tool_calls']]
-                for result in [f.result() for f in futures]:
-                    if result:
-                        succeeded_any_tool_call = True
-                        messages.append(result)
-                if not succeeded_any_tool_call:
+            if TOOL_CALLS in assistant_message:
+                messages, any_tool_success = self._handle_tools(messages, assistant_message["tool_calls"])
+                if not any_tool_success:
                     # All tool calls were hallucinations. This is a super rare case.
                     messages.pop()  # remove the last message (this the assistant message, asking for non-existing tools)
                     additional_temperature = .3  # increase temperature momentarily to avoid creating the same message again

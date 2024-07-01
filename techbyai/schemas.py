@@ -1,4 +1,6 @@
-from pydantic import BaseModel, RootModel, field_validator
+from pydantic import BaseModel, RootModel, field_validator, model_validator
+from typing import Any
+from .constants import DIRECTLY_ANSWER_TOOL, DIRECTLY_ANSWER_TOOL_RESPONSE
 
 
 class StringStringJSONWithCustomKeys(RootModel[dict[str, str]]):
@@ -142,3 +144,43 @@ class TitleAndSubtitle(BaseModel):
         
         return value
     
+
+class OllamaSingleToolCall(BaseModel):
+    tool: str
+    parameters: dict[str, Any]
+
+    @field_validator('tool', mode='before')
+    def check_tool_is_string(cls, value, info):
+        if not isinstance(value, str):
+            raise ValueError('Must be a string')
+        
+        return value
+    
+    @field_validator('parameters', mode='before')
+    def check_parameters_is_dict(cls, value, info):
+        if not isinstance(value, dict):
+            raise ValueError('Must be a dictionary')
+        
+        for key in value:
+            if not isinstance(key, str):
+                raise ValueError(f'Key {key} is not a string')
+        return value
+    
+    @model_validator(mode='after')
+    def check_directly_answer_tools(self):
+        if self.tool == DIRECTLY_ANSWER_TOOL and not DIRECTLY_ANSWER_TOOL_RESPONSE in self.parameters:
+            raise ValueError(f'Missing `{DIRECTLY_ANSWER_TOOL_RESPONSE}` parameter in {self.tool}')
+        return self
+
+
+class OllamaToolsCall(BaseModel):
+    tools: list[OllamaSingleToolCall]
+
+    @field_validator('tools', mode='before')
+    def check_tools_is_list(cls, value, info):
+        if not isinstance(value, list):
+            raise ValueError('Must be a list of tools')
+        
+        if not all(isinstance(tool, OllamaSingleToolCall) for tool in value):
+            raise ValueError('Must be a list of tools')
+        return value

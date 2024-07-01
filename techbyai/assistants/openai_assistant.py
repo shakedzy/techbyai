@@ -1,4 +1,5 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
 from openai import OpenAI, BadRequestError
 from openai.types.chat import ChatCompletion, ChatCompletionMessage, ChatCompletionMessageToolCall
 from openai._types import NOT_GIVEN
@@ -7,6 +8,7 @@ from .base_assistant import BaseAssistant
 from ..settings import Settings
 from ..tools import tools_params_definitions, REQUIRED_PARAM
 from ..archive import Archive
+from ..constants import TOOL_CALLS
 
 
 class OpenAIAssistant(BaseAssistant):
@@ -52,7 +54,7 @@ class OpenAIAssistant(BaseAssistant):
         message['role'] = completion_message.role
         message['content'] = completion_message.content
         if completion_message.tool_calls:
-            message['tool_calls'] = completion_message.tool_calls
+            message[TOOL_CALLS] = completion_message.tool_calls
         return message
     
     def _run_tool_call(self, tool_call: ChatCompletionMessageToolCall) -> dict[str, str] | None:
@@ -73,7 +75,16 @@ class OpenAIAssistant(BaseAssistant):
             self.logger.warn(f"Model requested non-existing tool: {tool_name}, skipping", color='yellow')
             return None
         
-    def _get_completion_message(self, as_json: bool, messages: list[dict[str, str]], additional_temperature: float) -> dict[str, Any]:
+    def _handle_tools(self, messages: list[dict[str, Any]], tool_calls: list) -> tuple[list[dict[str, Any]], bool]:
+        tools_messages = []
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(self._run_tool_call, tool_call) for tool_call in tool_calls]
+        for result in [f.result() for f in futures]:
+            if result:
+                tools_messages.append(result)
+        return messages + tools_messages, bool(tools_messages)
+        
+    def _get_completion_message(self, as_json: bool, messages: list[dict[str, Any]], additional_temperature: float) -> dict[str, Any]:
             try:
                 completion = self.client.chat.completions.create(
                     model=Settings().llm.model, 
@@ -96,3 +107,4 @@ class OpenAIAssistant(BaseAssistant):
                     raise e
             self._compute_cost(completion)
             return self._chat_assistant_message_to_dict(completion.choices[0].message)
+    

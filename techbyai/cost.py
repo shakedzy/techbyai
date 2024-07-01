@@ -7,14 +7,21 @@ from .color_logger import get_logger
 class Cost:
     _instance = None
     _atomic_locks: dict[str, bool] = {}
-    _prices: dict[str, tuple[float, float]] = Settings().costs
+    _prices: dict[str, tuple[float, float]] = {}
     _uses: dict[str, int] = {k: 0 for k in _prices.keys()}
     _max_cost: float = Settings().editorial.max_cost
     logger = get_logger()
-    
+
+    @staticmethod
+    def _get_model_costs() -> dict[str, tuple[float, float]]:
+        all_costs = Settings().costs
+        model_name = f"{Settings().llm.client.replace(':','-')}-{Settings().llm.model}"
+        return all_costs[model_name]
+        
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(Cost, cls).__new__(cls)
+            cls._prices = cls._get_model_costs()
         return cls._instance
 
     def __call__(self, precision: int = 2) -> float:

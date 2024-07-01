@@ -1,6 +1,5 @@
 [llm]
-client = "openai"
-type = "openai"
+client = "ollama:local"
 model = "gpt-4o"
 temperature = 0.5
 
@@ -18,14 +17,6 @@ user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
 [search]
 past_days = 1
 blacklist = ['arxiv.org', 'wikipedia.org', 'medium.com', 'linkedin.com']
-
-# Costs info: https://openai.com/pricing#language-models
-[costs]  # dollars
-input_tokens = [5, 1e6]
-output_tokens = [15, 1e6]
-embedding_tokens = [0.02, 1e6]
-tts_chars = [15, 1e6]
-web_search = [0.005, 1]
 
 [editorial]
 max_cost = 5  # dollars
@@ -67,3 +58,19 @@ companies = [
         "Ollama"
         ]
 twitter_accounts = {"AravSrinivas" = "Aravind Srinivas", "adcock_brett" = "Brett Adcock", "satyanadella" = "Satya Nadella", "Yampeleg" = "Yam Peleg", "arthurmensch" = "Arthur Mensch", "ylecun" = "Yann LeCun", "karpathy" = "Andrej Karpathy", "AndrewYNg" = "Andrew Ng", "geoffreyhinton" = "Geoffrey Hinton", "jeremyphoward" = "Jeremy Howard"}
+
+
+# COSTS (in US Dollars)
+[costs.openai-gpt-4o]  
+# Costs info: https://openai.com/pricing#language-models
+input_tokens = [5, 1e6]
+output_tokens = [15, 1e6]
+embedding_tokens = [0.02, 1e6]
+tts_chars = [15, 1e6]
+web_search = [0.005, 1]
+
+[costs.ollama-local-command-r]
+web_search = [0.005, 1]
+
+[costs.ollama-remote-command-r-plus]
+web_search = [0.005, 1]

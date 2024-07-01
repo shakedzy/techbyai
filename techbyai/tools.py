@@ -243,13 +243,13 @@ def query_magazine_archive(query: str, archive: Archive) -> str:
 #######
 
 def tools_params_definitions() -> ToolsDefType:
-    match Settings().llm.type:
+    match Settings().llm.client.split(':')[0]:
         case "openai":
             string, integer, array_of_strings = "string", "number", "array"
-        case "cohere":
+        case "ollama":
             string, integer, array_of_strings = "str", "int", "list[str]"
         case _:
-            raise ValueError(f"Unknown type: {Settings().llm.type}")
+            raise ValueError(f"Unknown type: {Settings().llm.client}")
         
     return {
         web_search: [("query", {"type": string, "description": "The query to search on the web"}, REQUIRED_PARAM)],

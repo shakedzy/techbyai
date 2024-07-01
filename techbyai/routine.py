@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 from random import randint, shuffle
 from concurrent.futures import ThreadPoolExecutor
 from openai import OpenAI
-from .assistants import OpenAIAssistant
+from paramiko.client import SSHClient
+from typing import Callable
 from .item_suggestion import ItemSuggestion
 from .color_logger import get_logger
 from .utils import flatten, domain_of_url, get_version, dedent
@@ -18,19 +19,48 @@ from .archive import Archive, Embedder
 from .viewed_urls import ViewedURLs
 from .tools import WEB_TOOLS, ARXIV_TOOLS, TWITTER_TOOLS, MAGAZINE_TOOLS
 from .schemas import StringStringJSONWithCustomKeys, StringIntJSONWithCustomKeys, TweetsAndTrends, SelectedItems, RemovableItems, TitleAndSubtitle
+from .assistants import BaseAssistant, OpenAIAssistant, OllamaAssistant
 
 
 class Routine:
     def __init__(self) -> None:
-        self.editor: OpenAIAssistant
-        self.twitter_analyst: OpenAIAssistant
-        self.reporters: list[OpenAIAssistant] = []
+        self.editor: BaseAssistant
+        self.twitter_analyst: BaseAssistant
+        self.reporters: list[BaseAssistant] = []
         self.logger = get_logger()
         self.start_time = time()
         self.cost = Cost()
         self.archive = Archive()
         self.viewed_urls = ViewedURLs()
-        self.client = OpenAI()
+        self.client = self._get_client()
+
+    def _get_client(self) -> OpenAI | SSHClient | None:
+        match Settings().llm.client:
+            case 'openai':
+                return OpenAI()
+            case 'ollama:local':
+                return None
+            case 'ollama:remote':
+                client = SSHClient()
+                client.load_system_host_keys()
+                client.connect(Settings().remote_host, username=Settings().remote_user)
+                return client
+            case _:
+                raise ValueError(f'Unknown client {Settings().llm.client}')
+            
+    def _get_assistant(self, definition: str, *, tools: list[Callable] = [], name: str | None = None, archive: Archive | None = None) -> BaseAssistant:
+        match Settings().llm.client.split(':')[0]:
+            case 'openai':
+                assistant_class = OpenAIAssistant
+            case 'ollama':
+                assistant_class = OllamaAssistant
+            case _:
+                raise ValueError(f'Unknown client {Settings().llm.client}')
+        return assistant_class(definition=definition, tools=tools, name=name, archive=archive, client=self.client)  # type: ignore
+            
+    def close(self) -> None:
+        if self.client:
+            self.client.close()
 
     def topics(self, twitter_trends: list[str]) -> str:
         companies: list[str] = Settings().editorial.companies
@@ -44,9 +74,9 @@ class Routine:
         shuffle(topics_list)
         return ", ".join(topics_list)
 
-    def _hire_editor(self) -> OpenAIAssistant:
+    def _hire_editor(self) -> BaseAssistant:
         num_editors = 3
-        assistant = OpenAIAssistant(definition="You are a creative AI assistant", client=self.client)
+        assistant = self._get_assistant(definition="You are a creative AI assistant")
         task = dedent(
             f"""
             I need to hire an Editor-in-Chief for a daily {Settings().editorial.subject} magazine. Think of {num_editors} different types
@@ -70,9 +100,9 @@ class Routine:
         selected_editor = possible_editors[randint(0, num_editors-1)]
         self.logger.debug(f"Selected editor: {selected_editor['name']} - {selected_editor['definition']}")
         editor_def = f"You are the Editor-in-Chief of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {selected_editor['definition']}"
-        return OpenAIAssistant(definition=editor_def, client=self.client, name=selected_editor['name'], archive=self.archive, tools=WEB_TOOLS + ARXIV_TOOLS + TWITTER_TOOLS + MAGAZINE_TOOLS)
+        return self._get_assistant(definition=editor_def, name=selected_editor['name'], archive=self.archive, tools=WEB_TOOLS + ARXIV_TOOLS + TWITTER_TOOLS + MAGAZINE_TOOLS)
     
-    def _hire_reporters(self) -> tuple[list[OpenAIAssistant], OpenAIAssistant]:
+    def _hire_reporters(self) -> tuple[list[BaseAssistant], BaseAssistant]:
         task = dedent(
             f"""
             You must hire {Settings().editorial.reporters} reporters to research, choose and write the articles
@@ -90,7 +120,7 @@ class Routine:
         for i, (name, description) in enumerate(reporters_kv_list):
             reporter_def = f"You are a reporter of a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}"
             tools = ARXIV_TOOLS if i == 0 else WEB_TOOLS
-            reporters.append(OpenAIAssistant(reporter_def, client=self.client, name=name, tools=tools))
+            reporters.append(self._get_assistant(reporter_def, name=name, tools=tools))
         
         second_task = dedent(
             f"""
@@ -106,7 +136,7 @@ class Routine:
         self.logger.debug(result.content)
         for name, description in list(result.json.items())[:1]:
             analyst_def = f"You are a Twitter analyst, working for a daily {Settings().editorial.subject} magazine named \"{Settings().editorial.name}\". {description}"
-            twitter_savvy = OpenAIAssistant(analyst_def, client=self.client, name=name, tools=TWITTER_TOOLS + WEB_TOOLS)
+            twitter_savvy = self._get_assistant(analyst_def, name=name, tools=TWITTER_TOOLS + WEB_TOOLS)
         return reporters, twitter_savvy
     
     def _twitter_analysis(self) -> tuple[list[str], list[int]]:
@@ -325,7 +355,7 @@ class Routine:
             result = self.editor.do(f"{task}\n---\n{text}")
             return result.content
         
-        def reporter_tasks(reporter: OpenAIAssistant, reporter_items: list[ItemSuggestion]) -> list[ItemSuggestion]:  
+        def reporter_tasks(reporter: BaseAssistant, reporter_items: list[ItemSuggestion]) -> list[ItemSuggestion]:  
             for i, item in enumerate(reporter_items):
                 if item.rank < 0:
                     continue
