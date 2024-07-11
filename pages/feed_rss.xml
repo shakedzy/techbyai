@@ -1,0 +1,23 @@
+---
+layout: null
+permalink: /rss/feed.xml
+---
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+    <title>{{ site.title }}</title>
+    <link>{{ site.url }}{{ site.baseurl }}</link>
+    <description>{{ site.description }}</description>
+    <lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>
+    <pubDate>{{ site.time | date_to_rfc822 }}</pubDate>
+    {% for post in site.posts limit:10 %}
+    <item>
+        <title>{{ post.date | date: "%d %b" }}: {{ post.title }}</title>
+        <description><![CDATA[{% if post.headers %}{{ post.headers }}{% else %}{{ post.excerpt | strip_html | xml_escape }}{% endif %}]]></description>
+        <pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
+        <link>{{ site.url }}{{ site.baseurl }}{{ post.url }}</link>
+        <guid isPermaLink="true">{{ site.url }}{{ site.baseurl }}{{ post.url }}</guid>
+    </item>
+    {% endfor %}
+</channel>
+</rss>

@@ -1,0 +1,130 @@
+.footer {
+  background-color: whitesmoke;
+  padding: 3rem 1.5rem 6rem;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  position: relative;
+  padding-bottom: 6rem;
+  min-height: 100%;
+  font-family: "Crimson Text", "Georgia", serif;
+}
+
+.page-footer {
+  position: absolute;
+  bottom: 0;
+  padding: 1rem;
+  width: 100%;
+}
+
+.is-centered {
+  display: block;
+  margin: 0 auto;
+}
+
+.is-rounded {
+  border-radius: 3%;
+}
+
+.hero.is-primary {
+  background-color: #FF8C69;
+  color: white;
+}
+
+.previous-titles {
+  background-color: #f1fdfa !important;
+  a {
+      font-weight: bold;
+  }
+}
+
+.loading {
+  padding: 20px;
+  color: white;
+  font-size: 16px;
+  border-left: 5px solid #FFF;
+  position: relative;
+  background: linear-gradient(270deg, white, #555);
+  background-size: 600% 600%;
+  animation: Loading 8s ease infinite;
+}
+
+@keyframes Loading {
+  0%{background-position: 0% 50%}
+  50%{background-position: 100% 50%}
+  100%{background-position: 0% 50%}
+}
+
+/* Media Query for Dark Mode */
+@media (prefers-color-scheme: dark) {
+  /* General body and background colors */
+  body, .button.is-white, .tile, .section {
+      background-color: #363636; /* Dark gray background */
+      color: #f5f5f5; /* Light text */
+  }
+
+  /* Navbar */
+  .nav, .navbar, .navbar-menu, .navbar-start, .navbar-end,
+  .navbar-item, .navbar-dropdown, .navbar-link {
+      background-color: #444; /* Darker background for navbar */
+      color: #ddd; /* Lighter text for better readability */
+  }
+
+  /* Buttons, Forms */
+  .button, .input, .textarea, .select select, .box {
+      background-color: #444; /* Darker elements for form items */
+      color: #eee; /* Light text */
+      border-color: #555; /* Dark border color */
+  }
+
+  h1, h2, strong, span, .title, .subtitle, .content {
+    color: #eee !important; /* Light text */
+  }
+
+  a:hover {
+    color: #ccc !important;
+  }
+
+  .tag {
+    color: #0a0a0a !important;
+  }
+
+  blockquote {
+    background-color: #1a1a1a !important;
+  }
+
+  .previous-titles {
+    background-color: #355950 !important
+  }
+
+  /* Panels and Tabs */
+  .panel, .tabs {
+      background-color: #333; /* Dark background for panels and tabs */
+      color: #ccc; /* Light text */
+  }
+
+  .panel-heading, .tabs.is-boxed li.is-active a, .tabs.is-toggle li.is-active a {
+      background-color: #555; /* Slightly lighter background for active elements */
+      color: #fff; /* White text for contrast */
+  }
+
+  /* Tiles */
+  .tile.is-ancestor {
+      border-color: #444; /* Dark border for tiles */
+  }
+
+  /* Footer */
+  .footer {
+      background-color: #282828; /* Very dark background for footer */
+      color: #eee; /* Light text */
+  }
+
+  /* Hero */
+  .hero.is-primary {
+      background-color: #1a1a1a; /* Adjust hero background for dark mode */
+  }
+}

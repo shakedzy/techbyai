@@ -1,0 +1,47 @@
+<nav class="nav">
+    <div class="container">
+        <div class="nav-left">
+            <a class="nav-item" href="{{ '' | relative_url }}/">
+                <span class="icon">
+                    <i class="fa fa-home"></i>
+                </span>
+            </a>
+        </div>
+
+        <div class="nav-center">
+            <a class="nav-item" target="_blank" href="https://github.com/shakedzy/techbyai">
+                <span class="icon">
+                    <i class="fa fa-github"></i>
+                </span>
+            </a>
+        </div>
+        <div class="nav-center">
+            <a class="nav-item" target="_blank" href="https://open.spotify.com/show/57LsLSXYUUPKv5Gk6y3L70">
+                <span class="icon">
+                    <i class="fa fa-spotify"></i>
+                </span>
+            </a>
+        </div>
+        <div class="nav-center">
+            <a class="nav-item" target="_blank" href="{{ 'rss/feed.xml' | relative_url }}">
+                <span class="icon">
+                    <i class="fa fa-rss"></i>
+                </span>
+            </a>
+        </div>
+
+        <span class="nav-toggle">
+        <span></span>
+        <span></span>
+        <span></span>
+        </span>
+
+        <div class="nav-right nav-menu">
+            {% for item in site.data.nav.items %}
+            <a class="nav-item" href="{{ item.link | relative_url }}">
+                <span>{{item.name}}</span>
+            </a>
+            {% endfor %}
+        </div>
+
+</nav>

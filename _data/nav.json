@@ -1,0 +1,20 @@
+{
+    "items": [
+        {
+            "name": "Archive",
+            "link": "/archive/"
+        },
+        {
+            "name": "Stats",
+            "link": "/stats/"
+        },
+        {
+            "name": "About",
+            "link": "/about/"
+        },
+        {
+            "name": "shakedzy.xyz",
+            "link": "https://shakedzy.xyz"
+        }
+    ]
+}

@@ -1,0 +1,11 @@
+name: Tech by AI
+email: shakedzy@gmail.com
+url: https://shakedzy.xyz
+description: "Daily tech news about AI, summarized by AI"
+author: Shaked Zychlinski
+title: Tech by AI
+permalink: pretty
+baseurl: /techbyai
+
+plugins:
+  - jekyll-sitemap

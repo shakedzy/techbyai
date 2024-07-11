@@ -1,0 +1,29 @@
+---
+layout: default
+---
+
+<section class="section">
+    <div class="container">
+        <div class="heading has-text-centered">
+            <p class="title is-3">{{page.title}}</p>
+            <p class="subtitle is-5" style="margin-top: -0.7rem; color: #7a7a7a"><em>{{page.subtitle}}</em></p>
+            <p class="subtitle is-6"><span class="tag is-white">{{ page.date | date: '%B %d, %Y'}}</span></p>
+            {% if page.audio %}
+                <div style="text-align: center;">
+                    <audio controls style="width: 60%; height: revert;">
+                        <source src="{{ '/audio/' | append: page.audio | relative_url }}" type="audio/mpeg">
+                    </audio><br>
+                </div>
+            {% endif %}
+        </div>
+        <br>
+        <div class="columns is-multiline">
+
+            <div class="column is-half is-offset-one-quarter">
+                <div class="content">
+                    {{content}}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
