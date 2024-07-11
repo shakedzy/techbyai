@@ -29,3 +29,4 @@ As the content is completely AI-generated, it should be treated as such. Take ev
 facts and don't be offended. Enjoy!
 
 **More information** on the developing process of _Tech by AI_ can be found on my [blogpost on Medium](https://medium.com/shakedzy/introducing-the-first-ever-ai-magazine-podcast-made-by-ai-e87937216cd1)
+
