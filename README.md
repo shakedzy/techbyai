@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://raw.githubusercontent.com/shakedzy/techbyai/gh-pages/images/byai_150.png"><br>
+    <img src="byai_150.png"><br>
      <a href="https://shakedzy.xyz/techbyai"><img src="https://img.shields.io/badge/website-techbyai.news-F68315?style=for-the-badge&labelcolor=orange"></a><br>
      <a href="https://shakedzy.xyz/techbyai/rss/feed.xml"><img src="https://img.shields.io/badge/Subscribe%20to-RSS-F68315?style=for-the-badge&logo=rss&color=24cbd1&logoColor=white"></a>
      <a href="https://open.spotify.com/show/57LsLSXYUUPKv5Gk6y3L70"><img src="https://img.shields.io/badge/Listen%20on-Spotify-F68315?style=for-the-badge&logo=spotify&logoColor=white&color=1ed45f"></a>
