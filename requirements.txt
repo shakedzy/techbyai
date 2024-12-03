@@ -1,0 +1,13 @@
+arxiv~=2.1.0
+beautifulsoup4~=4.12.3
+dynaconf~=3.2.5
+google-api-python-client~=2.123.0
+numpy~=1.26.4
+openai~=1.14.3
+pandas~=2.2.2
+pydantic~=2.7.2
+pydub~=0.25.1
+pypdf~=4.1.0
+pytz~=2024.1
+requests~=2.31.0
+setuptools
