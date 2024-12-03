@@ -1,0 +1,67 @@
+[llm]
+model = "gpt-4o"
+temperature = 0.5
+
+[embeddings]
+model = "text-embedding-3-small"
+
+[tts]
+model = "tts-1"
+voice = "shimmer"
+
+[web]
+surf_timeout_seconds = 15
+user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+
+[search]
+past_days = 1
+blacklist = ['arxiv.org', 'wikipedia.org', 'medium.com', 'linkedin.com']
+
+# Costs info: https://openai.com/pricing#language-models
+[costs]  # dollars
+input_tokens = [5, 1e6]
+output_tokens = [15, 1e6]
+embedding_tokens = [0.02, 1e6]
+tts_chars = [15, 1e6]
+web_search = [0.005, 1]
+
+[editorial]
+max_cost = 5  # dollars
+name = "Tech by AI"
+reporters = 3  # one is an academic reporer
+reporter_items = 5
+final_items = 7
+max_academic_papers = 2
+max_words_per_item = 150
+max_words_per_academic_paper = 200
+subject = "AI and Generative AI specifically"
+topics = [
+        "Foundation Models", 
+        "Uses of Generative AI", 
+        "AI Regulation and Policy", 
+        "AI in Robotics",
+        "Humanoid Robots",
+        "Promising startups in Generative AI", 
+        "Hardware for AI",
+        "New Generative AI models",
+        "Cutting-edge capabilities and breakthoughs in AI",
+        "New AI-related researches"
+        ]
+companies = [
+        "OpenAI", 
+        "Anthropic", 
+        "Mistral", 
+        "Google", 
+        "Meta", 
+        "Cohere", 
+        "Microsoft", 
+        "Amazon",
+        "NVidia", 
+        "Midjourney", 
+        "Stability AI", 
+        "Eleven Labs", 
+        "Hugging Face",
+        "Apple",
+        "Ollama"
+        ]
+twitter_accounts = {"AravSrinivas" = "Aravind Srinivas", "adcock_brett" = "Brett Adcock", "satyanadella" = "Satya Nadella", "Yampeleg" = "Yam Peleg", "arthurmensch" = "Arthur Mensch", "ylecun" = "Yann LeCun", "karpathy" = "Andrej Karpathy", "AndrewYNg" = "Andrew Ng", "geoffreyhinton" = "Geoffrey Hinton", "jeremyphoward" = "Jeremy Howard"}
